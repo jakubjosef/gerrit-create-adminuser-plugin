@@ -98,24 +98,29 @@ public class InitAdminUser implements InitStep {
                     db.accountSshKeys().insert(Collections.singleton(sshKey));
                 }
             } else {
+                String env_user = System.getProperty("GERRIT_ADMIN_USER");
+                String env_email = System.getProperty("GERRIT_ADMIN_EMAIL");
+                String env_fullname = System.getProperty("GERRIT_ADMIN_FULLNAME");
+
                 System.out.println("Admin account already exist.");
                 Account.Id id = Account.Id.parse("1000000");
 
                 Account adm = db.accounts().get(id);
-                adm.setUserName("admin");
-                adm.setPreferredEmail("ch007m@gmail.com");
+                adm.setUserName((env_user == null) ? "Admin" : env_user);
+                adm.setPreferredEmail((env_email == null) ? "admin@fabric8.io" : env_email);
+                adm.setFullName((env_fullname == null) ? "Administrator" : env_fullname);
                 db.accounts().update(Collections.singleton(adm));
 
                 AccountSshKey sshKey = readSshKey(id);
 
-                if (sshKey != null) {
-                    db.accountSshKeys().insert(Collections.singleton(sshKey));
-                }
-
                 System.out.println("Full Name :"  + adm.getFullName());
                 System.out.println("User Name :" + adm.getUserName());
                 System.out.println("Email :" + adm.getPreferredEmail());
-                System.out.println("SSH Key :" + sshKey.getSshPublicKey());
+
+                if (sshKey != null) {
+                    db.accountSshKeys().insert(Collections.singleton(sshKey));
+                    System.out.println("SSH Key :" + sshKey.getSshPublicKey());
+                }
             }
         } finally {
             db.close();
