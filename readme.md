@@ -1,10 +1,16 @@
 # Instructions followed to test the plugin
 
-- Generate a new gerrit site, cp our gerrit.config & the plugin generate to create a user
+- Download gerrit-war
+
+```
+curl -sSL -o target/gerrit.war https://gerrit-releases.storage.googleapis.com/gerrit-2.11.war
+```
+
+- Generate a new gerrit site, cp our gerrit.config & the plugin genrate to create a user
 
 ```
 rm -rf target/gerrit-site
-java -jar gerrit-2.11.war init --batch --no-auto-start -d target/gerrit-site
+java -jar gerrit.war init --batch --no-auto-start -d target/gerrit-site
 cp target/create-user-plugin-1.0-SNAPSHOT.jar target/gerrit-site/plugins/
 cp config/gerrit.config target/gerrit-site/etc
 ```
