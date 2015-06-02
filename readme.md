@@ -48,6 +48,22 @@ java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT
 
 ```
 ssh -p 29418 admin@localhost
+
+The authenticity of host '[localhost]:29418 ([::1]:29418)' can't be established.
+RSA key fingerprint is da:46:52:0c:69:68:76:f8:32:16:81:47:17:6d:70:69.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '[localhost]:29418' (RSA) to the list of known hosts.
+
+  ****    Welcome to Gerrit Code Review    ****
+
+  Hi Administrator, you have successfully connected over SSH.
+
+  Unfortunately, interactive shells are disabled.
+  To clone a hosted Git repository, use:
+
+  git clone ssh://admin@192.168.1.3:29418/REPOSITORY_NAME.git
+
+Connection to localhost closed.
 ```
 
          
