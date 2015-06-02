@@ -98,9 +98,9 @@ public class InitAdminUser implements InitStep {
                     db.accountSshKeys().insert(Collections.singleton(sshKey));
                 }
             } else {
-                String env_user = System.getProperty("GERRIT_ADMIN_USER");
-                String env_email = System.getProperty("GERRIT_ADMIN_EMAIL");
-                String env_fullname = System.getProperty("GERRIT_ADMIN_FULLNAME");
+                String env_user = System.getenv("GERRIT_ADMIN_USER");
+                String env_email = System.getenv("GERRIT_ADMIN_EMAIL");
+                String env_fullname = System.getenv("GERRIT_ADMIN_FULLNAME");
 
                 System.out.println("Admin account already exist.");
                 Account.Id id = Account.Id.parse("1000000");
