@@ -17,7 +17,7 @@ cp config/gerrit.config target/gerrit-site/etc
 
 - open the web browser at the address `http://localhost:8080/login/%23%2F` and check if the admin user exists
 
-![Admin User not there](user-not-there.png)
+![Admin User not there](user-not-there.png =250x)
 
 - Commands used to start/stop & check status 
 
