@@ -32,7 +32,7 @@ public class InitAdminUser implements InitStep {
 
     @Inject
     InitAdminUser(@PluginName String pluginName, ConsoleUI ui,
-            AllProjectsConfig allProjectsConfig, InitFlags flags) {
+                  AllProjectsConfig allProjectsConfig, InitFlags flags) {
         this.pluginName = pluginName;
         this.allProjectsConfig = allProjectsConfig;
         this.flags = flags;
@@ -45,7 +45,8 @@ public class InitAdminUser implements InitStep {
     }
 
     @Override
-    public void run() throws Exception { }
+    public void run() throws Exception {
+    }
 
     @Override
     public void postRun() throws Exception {
@@ -54,48 +55,50 @@ public class InitAdminUser implements InitStep {
         if (authType != AuthType.DEVELOPMENT_BECOME_ANY_ACCOUNT) {
             return;
         }
+        System.out.println("Auth Type : " + authType);
+
         ReviewDb db = dbFactory.open();
         try {
             if (db.accounts().anyAccounts().toList().isEmpty()) {
                 ui.header("Gerrit Administrator");
-                if (ui.yesno(true, "Create administrator user")) {
-                    Account.Id id = new Account.Id(db.nextAccountId());
-                    String username = ui.readString("admin", "username");
-                    String name = ui.readString("Administrator", "name");
-                    String httpPassword = ui.readString("secret", "HTTP password");
-                    AccountSshKey sshKey = readSshKey(id);
-                    String email = readEmail(sshKey);
-                    AccountExternalId extUser =
+                System.out.println("Create administrator user");
+                Account.Id id = new Account.Id(db.nextAccountId());
+                String username = ui.readString("admin", "username");
+                String name = ui.readString("Administrator", "name");
+                String httpPassword = ui.readString("secret", "HTTP password");
+                AccountSshKey sshKey = readSshKey(id);
+                String email = readEmail(sshKey);
+                AccountExternalId extUser =
+                        new AccountExternalId(id, new AccountExternalId.Key(
+                                AccountExternalId.SCHEME_USERNAME, username));
+                if (!Strings.isNullOrEmpty(httpPassword)) {
+                    extUser.setPassword(httpPassword);
+                }
+                db.accountExternalIds().insert(Collections.singleton(extUser));
+                if (email != null) {
+                    AccountExternalId extMailto =
                             new AccountExternalId(id, new AccountExternalId.Key(
-                                    AccountExternalId.SCHEME_USERNAME, username));
-                    if (!Strings.isNullOrEmpty(httpPassword)) {
-                        extUser.setPassword(httpPassword);
-                    }
-                    db.accountExternalIds().insert(Collections.singleton(extUser));
-                    if (email != null) {
-                        AccountExternalId extMailto =
-                                new AccountExternalId(id, new AccountExternalId.Key(
-                                        AccountExternalId.SCHEME_MAILTO, email));
-                        extMailto.setEmailAddress(email);
-                        db.accountExternalIds().insert(Collections.singleton(extMailto));
-                    }
-                    Account a = new Account(id, TimeUtil.nowTs());
-                    a.setFullName(name);
-                    a.setPreferredEmail(email);
-                    db.accounts().insert(Collections.singleton(a));
-                    AccountGroupMember m =
-                            new AccountGroupMember(new AccountGroupMember.Key(id,
-                                    new AccountGroup.Id(1)));
-                    db.accountGroupMembers().insert(Collections.singleton(m));
-                    if (sshKey != null) {
-                        db.accountSshKeys().insert(Collections.singleton(sshKey));
-                    }
+                                    AccountExternalId.SCHEME_MAILTO, email));
+                    extMailto.setEmailAddress(email);
+                    db.accountExternalIds().insert(Collections.singleton(extMailto));
+                }
+                Account a = new Account(id, TimeUtil.nowTs());
+                a.setFullName(name);
+                a.setPreferredEmail(email);
+                db.accounts().insert(Collections.singleton(a));
+                AccountGroupMember m =
+                        new AccountGroupMember(new AccountGroupMember.Key(id,
+                                new AccountGroup.Id(1)));
+                db.accountGroupMembers().insert(Collections.singleton(m));
+                if (sshKey != null) {
+                    db.accountSshKeys().insert(Collections.singleton(sshKey));
                 }
             }
         } finally {
             db.close();
         }
     }
+
     private String readEmail(AccountSshKey sshKey) {
         String defaultEmail = "admin@gmail.com";
         if (sshKey != null && sshKey.getComment() != null) {
@@ -106,6 +109,7 @@ public class InitAdminUser implements InitStep {
         }
         return readEmail(defaultEmail);
     }
+
     private String readEmail(String defaultEmail) {
         String email = ui.readString(defaultEmail, "email");
         if (email != null && !EmailValidator.getInstance().isValid(email)) {
@@ -114,6 +118,7 @@ public class InitAdminUser implements InitStep {
         }
         return email;
     }
+
     private AccountSshKey readSshKey(Account.Id id) throws IOException {
         String defaultPublicSshKeyFile = "";
         Path defaultPublicSshKeyPath =
@@ -126,6 +131,7 @@ public class InitAdminUser implements InitStep {
         return !Strings.isNullOrEmpty(publicSshKeyFile)
                 ? createSshKey(id, publicSshKeyFile) : null;
     }
+
     private AccountSshKey createSshKey(Account.Id id, String keyFile)
             throws IOException {
         Path p = Paths.get(keyFile);
