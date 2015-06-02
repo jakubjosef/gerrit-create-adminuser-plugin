@@ -6,7 +6,7 @@
 curl -L -o target/gerrit.war https://gerrit-releases.storage.googleapis.com/gerrit-2.11.war
 ```
 
-- Generate a new gerrit site, cp our gerrit.config & the plugin generate to create a user
+- Generate a new gerrit site, copy our gerrit.config where the authentication type is defined to "DEVELOPMENT_BECOME_ACCOUNT" & the plugin generate to create a default admin user and import your ssh public key
 
 ```
 ./target/gerrit-site/bin/gerrit.sh stop
@@ -18,9 +18,9 @@ java -jar target/gerrit.war init --batch -d target/gerrit-site
 ./target/gerrit-site/bin/gerrit.sh start
 ```
 
-- open the web browser at the address `http://localhost:8080/login/%23%2F` and check if the admin user exists
+- Open the web browser at the address `http://localhost:8080/login/%23%2F` and check if the admin user exists
 
-![Admin User not there](user-not-there.png)
+![Admin User](admin_user.png)
 
 - Commands used to start/stop, check status
 
@@ -33,7 +33,7 @@ java -jar target/gerrit.war init --batch -d target/gerrit-site
 
 - Consult database records
 
-``
+```
 ./target/gerrit-site/bin/gerrit.sh stop
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SHOW TABLES'
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNTS'
