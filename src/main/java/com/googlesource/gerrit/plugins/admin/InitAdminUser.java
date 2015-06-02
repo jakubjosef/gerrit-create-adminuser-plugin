@@ -75,6 +75,7 @@ public class InitAdminUser implements InitStep {
                     extUser.setPassword(httpPassword);
                 }
                 db.accountExternalIds().insert(Collections.singleton(extUser));
+
                 if (email != null) {
                     AccountExternalId extMailto =
                             new AccountExternalId(id, new AccountExternalId.Key(
@@ -82,17 +83,39 @@ public class InitAdminUser implements InitStep {
                     extMailto.setEmailAddress(email);
                     db.accountExternalIds().insert(Collections.singleton(extMailto));
                 }
+
                 Account a = new Account(id, TimeUtil.nowTs());
                 a.setFullName(name);
                 a.setPreferredEmail(email);
                 db.accounts().insert(Collections.singleton(a));
+
                 AccountGroupMember m =
                         new AccountGroupMember(new AccountGroupMember.Key(id,
                                 new AccountGroup.Id(1)));
                 db.accountGroupMembers().insert(Collections.singleton(m));
+
                 if (sshKey != null) {
                     db.accountSshKeys().insert(Collections.singleton(sshKey));
                 }
+            } else {
+                System.out.println("Admin account already exist.");
+                Account.Id id = Account.Id.parse("1000000");
+
+                Account adm = db.accounts().get(id);
+                adm.setUserName("admin");
+                adm.setPreferredEmail("ch007m@gmail.com");
+                db.accounts().update(Collections.singleton(adm));
+
+                AccountSshKey sshKey = readSshKey(id);
+
+                if (sshKey != null) {
+                    db.accountSshKeys().insert(Collections.singleton(sshKey));
+                }
+
+                System.out.println("Full Name :"  + adm.getFullName());
+                System.out.println("User Name :" + adm.getUserName());
+                System.out.println("Email :" + adm.getPreferredEmail());
+                System.out.println("SSH Key :" + sshKey.getSshPublicKey());
             }
         } finally {
             db.close();
@@ -124,6 +147,7 @@ public class InitAdminUser implements InitStep {
         Path defaultPublicSshKeyPath =
                 Paths.get(System.getProperty("user.home"), ".ssh", "id_rsa.pub");
         if (Files.exists(defaultPublicSshKeyPath)) {
+            System.out.println("SSH Key exist");
             defaultPublicSshKeyFile = defaultPublicSshKeyPath.toString();
         }
         String publicSshKeyFile =

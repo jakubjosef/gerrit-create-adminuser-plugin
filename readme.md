@@ -33,7 +33,7 @@ java -jar target/gerrit.war init --batch -d target/gerrit-site
 
 - Consult database records
 
-```
+``
 ./target/gerrit-site/bin/gerrit.sh stop
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SHOW TABLES'
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNTS'
@@ -42,6 +42,12 @@ java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT_GROUP_MEMBERS'
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT_GROUP_NAMES'
 
+```
+
+- Test ssh connection
+
+```
+ssh -p 29418 admin@localhost
 ```
 
          
