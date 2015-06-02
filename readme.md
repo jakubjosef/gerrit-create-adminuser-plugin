@@ -12,7 +12,7 @@ curl -L -o target/gerrit.war https://gerrit-releases.storage.googleapis.com/gerr
 ./target/gerrit-site/bin/gerrit.sh stop
 rm -rf target/gerrit-site
 java -jar target/gerrit.war init --batch --no-auto-start -d target/gerrit-site
-# cp target/create-user-plugin-1.0-SNAPSHOT.jar target/gerrit-site/plugins/
+cp target/create-user-plugin-1.0-SNAPSHOT.jar target/gerrit-site/plugins/
 cp config/gerrit.config target/gerrit-site/etc
 java -jar target/gerrit.war init --batch -d target/gerrit-site
 ./target/gerrit-site/bin/gerrit.sh start
