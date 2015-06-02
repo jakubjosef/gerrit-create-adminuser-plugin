@@ -101,15 +101,24 @@ public class InitAdminUser implements InitStep {
                 String env_user = System.getenv("GERRIT_ADMIN_USER");
                 String env_email = System.getenv("GERRIT_ADMIN_EMAIL");
                 String env_fullname = System.getenv("GERRIT_ADMIN_FULLNAME");
+                String env_pwd = System.getenv("GERRIT_ADMIN_PWD");
 
                 System.out.println("Admin account already exist.");
                 Account.Id id = Account.Id.parse("1000000");
 
                 Account adm = db.accounts().get(id);
-                adm.setUserName((env_user == null) ? "Admin" : env_user);
+                adm.setUserName((env_user == null) ? "admin" : env_user);
                 adm.setPreferredEmail((env_email == null) ? "admin@fabric8.io" : env_email);
                 adm.setFullName((env_fullname == null) ? "Administrator" : env_fullname);
                 db.accounts().update(Collections.singleton(adm));
+
+                AccountExternalId.Key extId_key = new AccountExternalId.Key( AccountExternalId.SCHEME_USERNAME, adm.getUserName() );
+                AccountExternalId extUser = db.accountExternalIds().get(extId_key);
+                if (extUser != null) {
+                    extUser.setPassword((env_pwd == null) ? "secret" : env_pwd);
+                    System.out.println("Set admin password : " + extUser.getPassword());
+                    db.accountExternalIds().update(Collections.singleton(extUser));
+                }
 
                 AccountSshKey sshKey = readSshKey(id);
 
