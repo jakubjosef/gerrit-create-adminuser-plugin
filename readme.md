@@ -66,6 +66,27 @@ Warning: Permanently added '[localhost]:29418' (RSA) to the list of known hosts.
 Connection to localhost closed.
 ```
 
+- Run some commands
+
+```
+List members
+
+ssh -p 29418 admin@localhost gerrit ls-members Administrators
+id      username        full name       email
+1000000 admin   Administrator   ch007m@gmail.com
+
+Lis tof plugins
+
+ssh -p 29418 admin@localhost gerrit plugin ls -a --format json
+{
+  "create-admin-user": {
+    "id": "create-admin-user",
+    "version": "1.0-SNAPSHOT",
+    "index_url": "plugins/create-admin-user/"
+  }
+}
+```
+
          
       
 
