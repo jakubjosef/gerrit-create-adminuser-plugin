@@ -96,7 +96,7 @@ public class JGitClient {
         repo = git.getRepository();
         StoredConfig config = repo.getConfig();
         config.setString("user", null, "name", "Administrator");
-        config.setString("user", null, "email", "admin1@fabric8.io");
+        config.setString("user", null, "email", "admin@example.com");
         config.setString("remote", "origin", "url", remotePath);
         config.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*");
         config.save();
