@@ -1,12 +1,11 @@
 # Instructions followed to test the plugin
 
-- Create the project using the archetype
+- Create the plugin maven project using the maven archetype
 
 
 ```
-
+mvn archetype:generate -DarchetypeGroupId=com.google.gerrit -DarchetypeArtifactId=gerrit-plugin-archetype  -DarchetypeVersion=2.11 -DgroupId=com.googlesource.gerrit.plugins.admin -DartifactId=createuserplugin
 ```
-
 
 
 - Download gerrit-war
@@ -29,6 +28,21 @@ cp target/create-user-plugin-2.11.jar target/gerrit-site/plugins/
 cp config/gerrit.config target/gerrit-site/etc
 java -jar target/gerrit.war init --batch -d target/gerrit-site
 ./target/gerrit-site/bin/gerrit.sh start
+```
+
+- To debug
+
+```
+./target/gerrit-site/bin/gerrit.sh stop
+rm -rf target/gerrit-site
+export GERRIT_ADMIN_USER='admin'
+export GERRIT_ADMIN_FULLNAME='Administrator'
+export GERRIT_ADMIN_EMAIL='admin1@fabric8.io'
+export GERRIT_ADMIN_PWD='mysecret'
+java -jar target/gerrit.war init --batch --no-auto-start -d target/gerrit-site
+cp target/create-user-plugin-2.11.jar target/gerrit-site/plugins/
+cp config/gerrit.config target/gerrit-site/etc
+java -Xdebug -Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y -jar target/gerrit.war init --batch -d target/gerrit-site
 ```
 
 - Open the web browser at the address `http://localhost:8080/login/%23%2F` and check if the admin user exists
