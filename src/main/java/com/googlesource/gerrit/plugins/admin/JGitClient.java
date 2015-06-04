@@ -52,6 +52,11 @@ public class JGitClient {
             File oldFile = new File(cl.localPath + "/project.config");
             FileUtils.copyFile(newFile, oldFile);
 
+            StoredConfig config = cl.repo.getConfig();
+            config.setString("branch", "meta/config", "remote", "origin");
+            config.setString("branch", "meta/config", "merge", "refs/heads/meta/config");
+            config.save();
+
             // Check Diff
             cl.checkDiff();
 
