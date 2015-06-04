@@ -9,10 +9,7 @@ import org.eclipse.jgit.api.errors.*;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
-import org.eclipse.jgit.lib.Config;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.*;
 
@@ -181,11 +178,13 @@ public class JGitClient {
 
         RefSpec refSpec = new RefSpec("meta/config:meta/config");
         try {
-            Iterable<PushResult> results = git.push().setRemote("origin").setTransportConfigCallback(tccb).setRefSpecs(refSpec).call();
+            Iterable<PushResult> results = git.push().setRemote("origin")
+                                                      .setTransportConfigCallback(tccb)
+                                                      .setRefSpecs(refSpec).call();
             for(PushResult result : results) {
                 Collection<RemoteRefUpdate> updates = result.getRemoteUpdates();
                 for(RemoteRefUpdate update : updates) {
-                    System.out.println("Push message : " + update.getMessage() + " from remote : " +update.getRemoteName() + " & status : " + update.getStatus());
+                    System.out.println("Push message : " + update.getMessage() + ", from remote : " +update.getRemoteName() + " & status : " + update.getStatus());
                 }
             }
         } catch (GitAPIException e) {
