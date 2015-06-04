@@ -5,34 +5,67 @@ import static org.junit.Assert.*;
 import com.jcraft.jsch.Session;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.*;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidRemoteException;
-import org.eclipse.jgit.api.errors.JGitInternalException;
-import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.api.errors.*;
+import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Config;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 public class JGitClient {
 
-    private String localPath, remotePath;
-    private Repository localRepo;
+    private String localPath, remotePath, projectConfig;
     private Git git;
+    private Repository repo;
+    /*
+    private Repository localRepo;
     private SshSessionFactory sshSessionFactory;
     private TransportConfigCallback tccb;
+    */
 
-    JGitClient() {}
+    private final static String COMMIT_MESSAGE = "Change project permissions to allow access for Non-Interactive Users";
+
+    JGitClient() {
+        this.localPath = "/Users/chmoulli/Temp/createuserplugin/target/mytest";
+        this.remotePath = "ssh://admin@localhost:29418/All-Projects";
+        this.projectConfig = "/Users/chmoulli/Temp/createuserplugin/config/project.config";
+    }
 
     public static void main(String[] args) {
         JGitClient cl = new JGitClient();
         try {
-            cl.init();
+
+            // Init Git Gerrit AllProjects repository & fetch the ref/meta/config branch
+            cl.initGitAndRepo();
+            cl.fetch();
+            cl.checkout();
+
+            // Replace the old with the new file
+            File newFile = new File(cl.projectConfig);
+            File oldFile = new File(cl.localPath + "/project.config");
+            FileUtils.copyFile(newFile, oldFile);
+
+            // Check Diff
+            cl.checkDiff();
+
+            // Commit the modification
+            cl.commitChange(COMMIT_MESSAGE);
+
+            cl.checkStatus();
+
+            // Push the modification
+            cl.pushChange();
+
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InvalidRemoteException e) {
@@ -46,58 +79,117 @@ public class JGitClient {
         }
     }
 
-    public void init() throws Exception {
+    public void initGitAndRepo() throws Exception {
 
-        localPath = "/Users/chmoulli/Temp/createuserplugin/target/mytest";
         File gitworkDir = new File(localPath);
         FileUtils.deleteDirectory(gitworkDir);
 
         File gitDir = new File(gitworkDir, ".git");
 
-        // remotePath = "http://admin:secret@localhost:8080/All-Projects";
-        remotePath = "ssh://admin@localhost:29418/All-Projects";
-
-        // Create a git init project
+        // Create a Git project
         InitCommand initCommand = Git.init();
         initCommand.setDirectory(gitworkDir);
         initCommand.setBare(false);
-        Git git = initCommand.call();
+        git = initCommand.call();
 
         assertTrue(gitDir.exists());
         assertNotNull(git);
 
-        // Save origin, user & email
-        Repository repo = git.getRepository();
+        // Save remote origin, user & email
+        repo = git.getRepository();
         StoredConfig config = repo.getConfig();
-        config.setString("user",null,"name","Administrator");
-        config.setString("user", null, "email", "admin@example.com");
+        config.setString("user", null, "name", "Administrator");
+        config.setString("user", null, "email", "admin1@fabric8.io");
         config.setString("remote", "origin", "url", remotePath);
         config.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*");
         config.save();
+    }
 
-        // Fetch ref
-        RefSpec refspec = new RefSpec("refs/meta/config:refs/remotes/origin/meta/config");
-        git.fetch().setRemote("origin").setRefSpecs(refspec).call();
-
-        // Checkout
-        git.checkout().setName("meta/config")
-                .setCreateBranch(true)
-                .setStartPoint("origin/meta/config")
-                .call();
+    public void fetch() throws GitAPIException {
 
         final SshSessionFactory sshSessionFactory = new JschConfigSessionFactory() {
             @Override
-            protected void configure( OpenSshConfig.Host host, Session session ) {
+            protected void configure(OpenSshConfig.Host host, Session session) {
                 session.setConfig("StrictHostKeyChecking", "no");
             }
         };
 
         TransportConfigCallback tccb = new TransportConfigCallback() {
             @Override
-            public void configure( Transport transport ) {
-                SshTransport sshTransport = ( SshTransport )transport;
-                sshTransport.setSshSessionFactory( sshSessionFactory );
+            public void configure(Transport transport) {
+                SshTransport sshTransport = (SshTransport) transport;
+                sshTransport.setSshSessionFactory(sshSessionFactory);
             }
         };
+
+        RefSpec refspec = new RefSpec("refs/meta/config:refs/remotes/origin/meta/config");
+        git.fetch()
+           .setTransportConfigCallback(tccb)
+           .setRemote("origin")
+           .setRefSpecs(refspec)
+           .call();
+    }
+
+    public void checkout() throws GitAPIException {
+        git.checkout()
+           .setName("meta/config")
+           .setCreateBranch(true)
+           .setStartPoint("origin/meta/config")
+           .call();
+    }
+
+    public void checkDiff() throws GitAPIException, IOException {
+        List<DiffEntry> diffEntries = git.diff().call();
+        for(DiffEntry diffEntry : diffEntries) {
+            System.out.println("New Id : " + diffEntry.getNewId().name());
+            System.out.println("Old Id : " + diffEntry.getOldId().name());
+/*            DiffFormatter formatter = new DiffFormatter(System.out);
+            formatter.setRepository(repo);
+            formatter.format(diffEntry);*/
+        }
+    }
+
+    public void checkStatus() throws GitAPIException {
+        Status status = git.status().call();
+        Set<String> modified = status.getModified();
+        for(String modif : modified) {
+            System.out.println("Modification : " + modif);
+        }
+    }
+
+    public void commitChange(String message) throws GitAPIException {
+        RevCommit revCommit = git.commit().setMessage(message).setAll(true).call();
+        System.out.println("Commit Message : " + revCommit.getFullMessage());
+    }
+
+    public void pushChange() {
+
+        final SshSessionFactory sshSessionFactory = new JschConfigSessionFactory() {
+            @Override
+            protected void configure(OpenSshConfig.Host host, Session session) {
+                session.setConfig("StrictHostKeyChecking", "no");
+            }
+        };
+
+        TransportConfigCallback tccb = new TransportConfigCallback() {
+            @Override
+            public void configure(Transport transport) {
+                SshTransport sshTransport = (SshTransport) transport;
+                sshTransport.setSshSessionFactory(sshSessionFactory);
+            }
+        };
+
+        RefSpec refSpec = new RefSpec("meta/config:meta/config");
+        try {
+            Iterable<PushResult> results = git.push().setRemote("origin").setTransportConfigCallback(tccb).setRefSpecs(refSpec).call();
+            for(PushResult result : results) {
+                Collection<RemoteRefUpdate> updates = result.getRemoteUpdates();
+                for(RemoteRefUpdate update : updates) {
+                    System.out.println("Push message : " + update.getMessage() + " from remote : " +update.getRemoteName() + " & status : " + update.getStatus());
+                }
+            }
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        }
     }
 }
