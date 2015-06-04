@@ -18,12 +18,14 @@ import com.google.gerrit.extensions.client.InheritableBoolean;
 import com.google.gerrit.pgm.init.api.*;
 import com.google.gerrit.reviewdb.client.*;
 import com.google.gerrit.reviewdb.server.ReviewDb;
+import com.google.gerrit.server.account.GroupUUID;
 import com.google.gerrit.server.config.AllProjectsName;
 import com.google.gerrit.server.config.PluginConfigFactory;
 import com.google.gerrit.server.config.SitePaths;
 import com.google.gerrit.server.extensions.events.GitReferenceUpdated;
 import com.google.gerrit.server.git.*;
 import com.google.gerrit.server.project.ProjectCache;
+import com.google.gwtorm.server.OrmException;
 import com.google.gwtorm.server.SchemaFactory;
 import com.google.inject.*;
 import org.apache.commons.validator.routines.EmailValidator;
@@ -58,7 +60,7 @@ public class CreateRepo implements InitStep {
     @Inject(optional = true)
     private GitRepositoryManager mgr;
 
-/*    @Inject(optional = true)
+/*    @Inject
     protected ProjectCache projectCache;*/
 
     private SitePaths site;
@@ -66,10 +68,10 @@ public class CreateRepo implements InitStep {
     private PluginConfigFactory pluginCfg;
 
     private AccountGroup batchAccount;
+    private AccountGroup adminAccount;
 
     private GroupReference admin;
 
-    //GroupReference.forGroup(batchAccount);
     private GroupReference batch;
     private GroupReference anonymous;
     private GroupReference registered;
@@ -142,6 +144,9 @@ public class CreateRepo implements InitStep {
             }
         }
 
+        ReviewDb db = dbFactory.open();
+
+
         Repository git = null;
 
         try {
@@ -164,85 +169,6 @@ public class CreateRepo implements InitStep {
             if (git != null) {
                 git.close();
             }
-        }
-
-        ReviewDb db = dbFactory.open();
-
-        try {
-            if (db.accounts().anyAccounts().toList().isEmpty()) {
-                ui.header("Gerrit Administrator");
-                System.out.println("Create administrator user");
-                Account.Id id = new Account.Id(db.nextAccountId());
-                String username = ui.readString("admin", "username");
-                String name = ui.readString("Administrator", "name");
-                String httpPassword = ui.readString("secret", "HTTP password");
-                AccountSshKey sshKey = readSshKey(id);
-                String email = readEmail(sshKey);
-                AccountExternalId extUser =
-                        new AccountExternalId(id, new AccountExternalId.Key(
-                                AccountExternalId.SCHEME_USERNAME, username));
-                if (!Strings.isNullOrEmpty(httpPassword)) {
-                    extUser.setPassword(httpPassword);
-                }
-                db.accountExternalIds().insert(Collections.singleton(extUser));
-
-                if (email != null) {
-                    AccountExternalId extMailto =
-                            new AccountExternalId(id, new AccountExternalId.Key(
-                                    AccountExternalId.SCHEME_MAILTO, email));
-                    extMailto.setEmailAddress(email);
-                    db.accountExternalIds().insert(Collections.singleton(extMailto));
-                }
-
-                Account a = new Account(id, TimeUtil.nowTs());
-                a.setFullName(name);
-                a.setPreferredEmail(email);
-                db.accounts().insert(Collections.singleton(a));
-
-                AccountGroupMember m =
-                        new AccountGroupMember(new AccountGroupMember.Key(id,
-                                new AccountGroup.Id(1)));
-                db.accountGroupMembers().insert(Collections.singleton(m));
-
-                if (sshKey != null) {
-                    db.accountSshKeys().insert(Collections.singleton(sshKey));
-                }
-            } else {
-                String env_user = System.getenv("GERRIT_ADMIN_USER");
-                String env_email = System.getenv("GERRIT_ADMIN_EMAIL");
-                String env_fullname = System.getenv("GERRIT_ADMIN_FULLNAME");
-                String env_pwd = System.getenv("GERRIT_ADMIN_PWD");
-
-                System.out.println("Admin account already exist.");
-                Account.Id id = Account.Id.parse("1000000");
-
-                Account adm = db.accounts().get(id);
-                adm.setUserName((env_user == null) ? "admin" : env_user);
-                adm.setPreferredEmail((env_email == null) ? "admin@fabric8.io" : env_email);
-                adm.setFullName((env_fullname == null) ? "Administrator" : env_fullname);
-                db.accounts().update(Collections.singleton(adm));
-
-                AccountExternalId.Key extId_key = new AccountExternalId.Key(AccountExternalId.SCHEME_USERNAME, adm.getUserName());
-                AccountExternalId extUser = db.accountExternalIds().get(extId_key);
-                if (extUser != null) {
-                    extUser.setPassword((env_pwd == null) ? "secret" : env_pwd);
-                    System.out.println("Set admin password : " + extUser.getPassword());
-                    db.accountExternalIds().update(Collections.singleton(extUser));
-                }
-
-                AccountSshKey sshKey = readSshKey(id);
-
-                System.out.println("Full Name :" + adm.getFullName());
-                System.out.println("User Name :" + adm.getUserName());
-                System.out.println("Email :" + adm.getPreferredEmail());
-
-                if (sshKey != null) {
-                    db.accountSshKeys().insert(Collections.singleton(sshKey));
-                    System.out.println("SSH Key :" + sshKey.getSshPublicKey());
-                }
-            }
-        } finally {
-            db.close();
         }
     }
 
@@ -386,6 +312,18 @@ public class CreateRepo implements InitStep {
         c.getLabelSections().put(type.getName(), type);
         return type;
     }
+
+
+/*    private AccountGroup newGroup(ReviewDb c, String name, AccountGroup.UUID uuid)
+            throws OrmException {
+        if (uuid == null) {
+            uuid = GroupUUID.make(name, serverUser);
+        }
+        return new AccountGroup( //
+                new AccountGroup.NameKey(name), //
+                new AccountGroup.Id(c.nextAccountGroupId()), //
+                uuid);
+    }*/
 
 
 }

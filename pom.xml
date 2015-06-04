@@ -39,8 +39,8 @@ limitations under the License.
                     <archive>
                         <manifestEntries>
                             <Gerrit-PluginName>create-admin-user</Gerrit-PluginName>
-                            <!-- <Gerrit-InitStep>com.googlesource.gerrit.plugins.admin.InitAdminUser</Gerrit-InitStep>-->
-                            <Gerrit-InitStep>com.googlesource.gerrit.plugins.admin.CreateRepo</Gerrit-InitStep>
+                            <Gerrit-InitStep>com.googlesource.gerrit.plugins.admin.InitAdminUser</Gerrit-InitStep>
+  <!--                          <Gerrit-InitStep>com.googlesource.gerrit.plugins.admin.CreateRepo</Gerrit-InitStep>-->
 
                             <Implementation-Vendor>Gerrit Code Review</Implementation-Vendor>
                             <Implementation-URL>http://code.google.com/p/gerrit/</Implementation-URL>
@@ -81,10 +81,20 @@ limitations under the License.
             <version>${Gerrit-ApiVersion}</version>
             <type>war</type>
         </dependency>
-<!--        <dependency>
+       <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>3.4.1.201406201815-r</version>
-        </dependency>-->
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.4</version>
+        </dependency>
     </dependencies>
 </project>
