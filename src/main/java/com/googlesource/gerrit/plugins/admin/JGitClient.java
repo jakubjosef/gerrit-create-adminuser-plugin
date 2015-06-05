@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import com.jcraft.jsch.Session;
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.*;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -12,6 +13,7 @@ import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.*;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +22,8 @@ import java.util.List;
 import java.util.Set;
 
 public class JGitClient {
+
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(JGitClient.class);
 
     private String localPath, remotePath, projectConfig;
     private Git git;
@@ -58,12 +62,12 @@ public class JGitClient {
             config.save();
 
             // Check Diff
-            cl.checkDiff();
+            // cl.checkDiff();
 
             // Commit the modification
             cl.commitChange(COMMIT_MESSAGE);
 
-            cl.checkStatus();
+            // cl.checkStatus();
 
             // Push the modification
             cl.pushChange();
@@ -143,8 +147,8 @@ public class JGitClient {
     public void checkDiff() throws GitAPIException, IOException {
         List<DiffEntry> diffEntries = git.diff().call();
         for(DiffEntry diffEntry : diffEntries) {
-            System.out.println("New Id : " + diffEntry.getNewId().name());
-            System.out.println("Old Id : " + diffEntry.getOldId().name());
+            logger.info("New Id : " + diffEntry.getNewId().name());
+            logger.info("Old Id : " + diffEntry.getOldId().name());
 /*            DiffFormatter formatter = new DiffFormatter(System.out);
             formatter.setRepository(repo);
             formatter.format(diffEntry);*/
@@ -155,13 +159,13 @@ public class JGitClient {
         Status status = git.status().call();
         Set<String> modified = status.getModified();
         for(String modif : modified) {
-            System.out.println("Modification : " + modif);
+            logger.info("Modification : " + modif);
         }
     }
 
     public void commitChange(String message) throws GitAPIException {
         RevCommit revCommit = git.commit().setMessage(message).setAll(true).call();
-        System.out.println("Commit Message : " + revCommit.getFullMessage());
+        logger.info("Commit Message : " + revCommit.getFullMessage());
     }
 
     public void pushChange() {
@@ -185,11 +189,13 @@ public class JGitClient {
         try {
             Iterable<PushResult> results = git.push().setRemote("origin")
                                                       .setTransportConfigCallback(tccb)
-                                                      .setRefSpecs(refSpec).call();
+                                                      .setRefSpecs(refSpec)
+                                                      .setOutputStream(System.out)
+                                                      .call();
             for(PushResult result : results) {
                 Collection<RemoteRefUpdate> updates = result.getRemoteUpdates();
                 for(RemoteRefUpdate update : updates) {
-                    System.out.println("Push message : " + update.getMessage() + ", from remote : " +update.getRemoteName() + " & status : " + update.getStatus());
+                    logger.info("Response from remote : " +update.getRemoteName() + " & status : " + update.getStatus());
                 }
             }
         } catch (GitAPIException e) {
