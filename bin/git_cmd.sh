@@ -15,6 +15,7 @@ git push origin meta/config:meta/config
 gitlog
 git status
 cd ../..
+
 ##### GOOD ####
 # dabou:~/Temp/createuserplugin/target/mytestgit$ more .git/config
 # [core]

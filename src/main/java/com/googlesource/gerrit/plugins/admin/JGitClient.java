@@ -64,7 +64,7 @@ public class JGitClient {
             // Commit the modification
             cl.commitChange(COMMIT_MESSAGE);
 
-            // cl.checkStatus();
+            cl.checkStatus();
 
             // Push the modification
             cl.pushChange();
@@ -101,8 +101,12 @@ public class JGitClient {
         // Save remote origin, user & email
         repo = git.getRepository();
         StoredConfig config = repo.getConfig();
+        config.setString("core", null, "bare", "false");
+        config.setString("core", null, "ignorecase", "true");
+
         config.setString("user", null, "name", "Administrator");
         config.setString("user", null, "email", "admin@example.com");
+
         config.setString("remote", "origin", "url", remotePath);
         config.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*");
         config.save();
@@ -127,9 +131,9 @@ public class JGitClient {
 
         RefSpec refspec = new RefSpec("refs/meta/config:refs/remotes/origin/meta/config");
         git.fetch()
-           .setTransportConfigCallback(tccb)
-           .setRemote("origin")
-           .setCredentialsProvider(new UsernamePasswordCredentialsProvider("admin",""))
+                .setTransportConfigCallback(tccb)
+                .setRemote("origin")
+                .setCredentialsProvider(new UsernamePasswordCredentialsProvider("admin",""))
            .setRefSpecs(refspec)
            .call();
     }
