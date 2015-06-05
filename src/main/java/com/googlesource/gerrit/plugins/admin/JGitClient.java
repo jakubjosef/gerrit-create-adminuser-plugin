@@ -4,12 +4,9 @@ import static org.junit.Assert.*;
 
 import com.jcraft.jsch.Session;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.*;
 import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.diff.DiffFormatter;
-import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.*;
@@ -132,6 +129,7 @@ public class JGitClient {
         git.fetch()
            .setTransportConfigCallback(tccb)
            .setRemote("origin")
+           .setCredentialsProvider(new UsernamePasswordCredentialsProvider("admin",""))
            .setRefSpecs(refspec)
            .call();
     }
@@ -190,7 +188,6 @@ public class JGitClient {
             Iterable<PushResult> results = git.push().setRemote("origin")
                                                      .setTransportConfigCallback(tccb)
                                                      .setRefSpecs(refSpec)
-                                                     .setForce(true)
                                                      .setProgressMonitor(new TextProgressMonitor())
                                                      .call();
             for(PushResult result : results) {
