@@ -68,7 +68,10 @@ java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT_GROUPS'
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT_GROUP_MEMBERS'
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT_GROUP_NAMES'
-
+java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM CHANGES'
+java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM CHANGE_MESSAGES'
+java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT_DIFF_PREFERENCES'
+java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM SCHEMA_VERSION'
 ```
 
 - Test ssh connection
