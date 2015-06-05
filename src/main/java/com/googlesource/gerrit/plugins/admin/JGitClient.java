@@ -188,14 +188,18 @@ public class JGitClient {
         RefSpec refSpec = new RefSpec("meta/config:meta/config");
         try {
             Iterable<PushResult> results = git.push().setRemote("origin")
-                                                      .setTransportConfigCallback(tccb)
-                                                      .setRefSpecs(refSpec)
-                                                      .setProgressMonitor(new TextProgressMonitor())
-                                                      .call();
+                                                     .setTransportConfigCallback(tccb)
+                                                     .setRefSpecs(refSpec)
+                                                     .setForce(true)
+                                                     .setProgressMonitor(new TextProgressMonitor())
+                                                     .call();
             for(PushResult result : results) {
                 Collection<RemoteRefUpdate> updates = result.getRemoteUpdates();
                 for(RemoteRefUpdate update : updates) {
-                    logger.info("Response from remote : " +update.getRemoteName() + " & status : " + update.getStatus());
+                    RemoteRefUpdate.Status status = update.getStatus();
+                    TrackingRefUpdate trackingRefUpdate = update.getTrackingRefUpdate();
+                    logger.info("Response from remote : " + update.getRemoteName() + " & status : " + status );
+                    logger.info("Tracking Ref Update : " + trackingRefUpdate.getResult());
                 }
             }
         } catch (GitAPIException e) {
