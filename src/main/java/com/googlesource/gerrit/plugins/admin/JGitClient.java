@@ -187,7 +187,7 @@ public class JGitClient {
             }
         };
 
-        RefSpec refSpec = new RefSpec("meta/config:meta/config");
+        RefSpec refSpec = new RefSpec("meta/config:refs/meta/config");
         try {
             Iterable<PushResult> results = git.push().setRemote("origin")
                                                      .setTransportConfigCallback(tccb)
@@ -198,9 +198,7 @@ public class JGitClient {
                 Collection<RemoteRefUpdate> updates = result.getRemoteUpdates();
                 for(RemoteRefUpdate update : updates) {
                     RemoteRefUpdate.Status status = update.getStatus();
-                    TrackingRefUpdate trackingRefUpdate = update.getTrackingRefUpdate();
                     logger.info("Response from remote : " + update.getRemoteName() + " & status : " + status );
-                    logger.info("Tracking Ref Update : " + trackingRefUpdate.getResult());
                 }
             }
         } catch (GitAPIException e) {

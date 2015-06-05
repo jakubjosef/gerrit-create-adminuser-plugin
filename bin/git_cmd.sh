@@ -16,38 +16,4 @@ gitlog
 git status
 cd ../..
 
-##### GOOD ####
-# dabou:~/Temp/createuserplugin/target/mytestgit$ more .git/config
-# [core]
-#         repositoryformatversion = 0
-#         filemode = true
-#         bare = false
-#         logallrefupdates = true
-#         ignorecase = true
-#         precomposeunicode = true
-# [user]
-#         name = Administrator
-#         email = admin@example.com
-# [remote "origin"]
-#         url = ssh://admin@localhost:29418/All-Projects
-#         fetch = +refs/heads/*:refs/remotes/origin/*
-# [branch "meta/config"]
-#         remote = origin
-#         merge = refs/heads/meta/config
-#############
-###### BAD #######
-# [core]
-#         symlinks = false
-#         repositoryformatversion = 0
-#         filemode = true
-#         logallrefupdates = true
-#         precomposeunicode = true
-# [user]
-#         name = Administrator
-#         email = admin@example.com
-# [remote "origin"]
-#         url = ssh://admin@localhost:29418/All-Projects
-#         fetch = +refs/heads/*:refs/remotes/origin/*
-
-
 
