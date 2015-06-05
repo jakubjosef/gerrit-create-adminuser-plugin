@@ -190,7 +190,7 @@ public class JGitClient {
             Iterable<PushResult> results = git.push().setRemote("origin")
                                                       .setTransportConfigCallback(tccb)
                                                       .setRefSpecs(refSpec)
-                                                      .setOutputStream(System.out)
+                                                      .setProgressMonitor(new TextProgressMonitor())
                                                       .call();
             for(PushResult result : results) {
                 Collection<RemoteRefUpdate> updates = result.getRemoteUpdates();
@@ -199,6 +199,10 @@ public class JGitClient {
                 }
             }
         } catch (GitAPIException e) {
+            e.printStackTrace();
+        } catch (JGitInternalException e) {
+            throw new IllegalStateException("Unable to push into remote Git repository",e);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
