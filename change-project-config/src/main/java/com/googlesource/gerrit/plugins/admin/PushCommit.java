@@ -1,11 +1,6 @@
 package com.googlesource.gerrit.plugins.admin;
 
-import com.google.gerrit.extensions.annotations.PluginName;
-import com.google.gerrit.pgm.init.api.AllProjectsConfig;
-import com.google.gerrit.pgm.init.api.ConsoleUI;
-import com.google.gerrit.pgm.init.api.InitFlags;
-import com.google.gerrit.pgm.init.api.InitStep;
-import com.google.inject.Inject;
+
 import com.jcraft.jsch.Session;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -30,32 +25,59 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-public class ChangeProjectConfig implements InitStep {
+public class PushCommit {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ChangeProjectConfig.class);
-    private final static String COMMIT_MESSAGE = "Change project permissions to allow access for Non-Interactive Users";
+    private final static String COMMIT_MESSAGE = "Change project permissions to allow access for NonInteractive Users";
 
     private String localPath, remotePath, projectConfig;
     private Git git;
     private Repository repo;
-    private final ConsoleUI ui;
-    private final InitFlags flags;
-    private final String pluginName;
-    private final AllProjectsConfig allProjectsConfig;
 
-    @Inject
-    ChangeProjectConfig(@PluginName String pluginName, ConsoleUI ui,
-                        AllProjectsConfig allProjectsConfig, InitFlags flags) {
-        this.pluginName = pluginName;
-        this.allProjectsConfig = allProjectsConfig;
-        this.flags = flags;
-        this.ui = ui;
-        this.localPath = "/Users/chmoulli/Temp/createuserplugin/target/mytest";
-        this.remotePath = "ssh://admin@localhost:29418/All-Projects";
-        this.projectConfig = "/Users/chmoulli/Temp/createuserplugin/config/project.config";
+    PushCommit(String localPath, String remotePath, String projectConfig) {
+        this.localPath = localPath;
+        this.remotePath = remotePath;
+        this.projectConfig = projectConfig;
+    }
+
+    public void init() {
+
+        try {
+            // Init Git Gerrit AllProjects repository & fetch the ref/meta/config branch
+            initGitAndRepo();
+            fetch();
+            checkout();
+
+            // Replace the old with the new file
+            File newFile = new File(projectConfig);
+            File oldFile = new File(localPath + "/project.config");
+            FileUtils.copyFile(newFile, oldFile);
+
+            StoredConfig config = repo.getConfig();
+            config.setString("branch", "meta/config", "remote", "origin");
+            config.setString("branch", "meta/config", "merge", "refs/heads/meta/config");
+            config.save();
+
+            // Check Diff
+            // checkDiff();
+
+            // Commit the modification
+            commitChange(COMMIT_MESSAGE);
+
+            // Push the modification
+            pushChange();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InvalidRemoteException e) {
+            e.printStackTrace();
+        } catch (TransportException e) {
+            e.printStackTrace();
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void initGitAndRepo() throws Exception {
@@ -70,9 +92,6 @@ public class ChangeProjectConfig implements InitStep {
         initCommand.setDirectory(gitworkDir);
         initCommand.setBare(false);
         git = initCommand.call();
-
-        assertTrue(gitDir.exists());
-        assertNotNull(git);
 
         // Save remote origin, user & email
         repo = git.getRepository();
@@ -186,49 +205,5 @@ public class ChangeProjectConfig implements InitStep {
         }
     }
 
-    @Override
-    public void run() throws Exception {
-    }
 
-    @Override
-    public void postRun() throws Exception {
-        try {
-            // Init Git Gerrit AllProjects repository & fetch the ref/meta/config branch
-            initGitAndRepo();
-            fetch();
-            checkout();
-
-            // Replace the old with the new file
-            File newFile = new File(projectConfig);
-            File oldFile = new File(localPath + "/project.config");
-            FileUtils.copyFile(newFile, oldFile);
-
-            StoredConfig config = repo.getConfig();
-            config.setString("branch", "meta/config", "remote", "origin");
-            config.setString("branch", "meta/config", "merge", "refs/heads/meta/config");
-            config.save();
-
-            // Check Diff
-            // checkDiff();
-
-            // Commit the modification
-            commitChange(COMMIT_MESSAGE);
-
-            // checkStatus();
-
-            // Push the modification
-            pushChange();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidRemoteException e) {
-            e.printStackTrace();
-        } catch (TransportException e) {
-            e.printStackTrace();
-        } catch (GitAPIException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }
