@@ -1,4 +1,4 @@
-package com.googlesource.gerrit.plugins.admin;
+package io.fabric8.docker.gerrit;
 
 
 import com.jcraft.jsch.Session;

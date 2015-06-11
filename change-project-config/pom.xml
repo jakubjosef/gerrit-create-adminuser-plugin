@@ -3,42 +3,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.googlesource.gerrit.plugins.admin</groupId>
-    <artifactId>change-project-config-plugin</artifactId>
+    <groupId>io.fabric8.docker.gerrit</groupId>
+    <artifactId>change-project-config</artifactId>
     <packaging>jar</packaging>
-    <version>2.11</version>
-    <name>Gerrit Plugins :: Change Project Config (permissions, labels)</name>
-
-    <properties>
-        <Gerrit-ApiType>plugin</Gerrit-ApiType>
-        <Gerrit-ApiVersion>2.11</Gerrit-ApiVersion>
-    </properties>
+    <version>1.0</version>
+    <name>Fabric8 :: Gerrit :: Change Project Config (permissions, labels)</name>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <Gerrit-PluginName>create-admin-user</Gerrit-PluginName>
-                            <Gerrit-InitStep>com.googlesource.gerrit.plugins.admin.ChangeProjectConfig</Gerrit-InitStep>
-
-                            <Implementation-Vendor>Gerrit Code Review</Implementation-Vendor>
-                            <Implementation-URL>http://code.google.com/p/gerrit/</Implementation-URL>
-
-                            <Implementation-Title>${Gerrit-ApiType} ${project.artifactId}</Implementation-Title>
-                            <Implementation-Version>${project.version}</Implementation-Version>
-
-                            <Gerrit-ApiType>${Gerrit-ApiType}</Gerrit-ApiType>
-                            <Gerrit-ApiVersion>${Gerrit-ApiVersion}</Gerrit-ApiVersion>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -67,7 +39,7 @@
                                 <!-- add Main-Class to manifest file -->
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.googlesource.gerrit.plugins.admin.ChangeProjectConfig</mainClass>
+                                    <mainClass>io.fabric8.docker.gerrit.ChangeProjectConfig</mainClass>
                                 </transformer>
                             </transformers>
                             <filters>

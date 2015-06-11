@@ -1,4 +1,4 @@
-package com.googlesource.gerrit.plugins.admin;
+package io.fabric8.docker.gerrit;
 
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
@@ -42,9 +42,9 @@ public class ChangeProjectConfig {
         JSch jsch = new JSch();
         try {
             counter++;
-            logger.info(counter + " attempts.");
+            logger.info(counter + " attempt.");
 
-            logger.info("Establishing Connection...");
+            logger.info("Establishing Connection with Gerrit SSHD ...");
             Session s = jsch.getSession("admin", "localhost", port);
             s.setConfig("StrictHostKeyChecking", "no");
             s.connect();
