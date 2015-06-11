@@ -5,15 +5,21 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.Socket;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ChangeProjectConfig {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ChangeProjectConfig.class);
     private static String localPath, remotePath, projectConfig;
+    private static  int counter = 0;
 
     public static void main(String[] args) throws InterruptedException {
+
+        Lock lock = new ReentrantLock();
+        Condition cond = lock.newCondition();
 
         localPath = System.getenv("GERRIT_GIT_LOCALPATH");
         remotePath = System.getenv("GERRIT_GIT_REMOTEPATH");
@@ -24,25 +30,28 @@ public class ChangeProjectConfig {
         String myProjectConfig = (projectConfig == null) ? "/home/gerrit/config" : projectConfig;
         PushCommit gitPushCommit = new PushCommit(myLocalPath, myRemotePath, myProjectConfig);
 
-        for (int i = 1; i < 10; i++) {
-            logger.info(i + " attempts.");
-            if (sshdAvailable(29418)) {
-                gitPushCommit.init();
-                break;
-            }
-            Thread.sleep(5000);
-        }
+        lock.lock();
+        while(! sshdAvailable(29418))
+            cond.await(5, TimeUnit.SECONDS);
+        
+        gitPushCommit.init();
+        lock.unlock();
     }
 
     private static boolean sshdAvailable(int port) {
         JSch jsch = new JSch();
         try {
+            counter++;
+            logger.info(counter + " attempts.");
+
+            logger.info("Establishing Connection...");
             Session s = jsch.getSession("admin", "localhost", port);
             s.setConfig("StrictHostKeyChecking", "no");
-            logger.info("Establishing Connection...");
             s.connect();
+            
             logger.info("Connection established.");
             s.disconnect();
+            
             return true;
         } catch (JSchException jschEx) {
             if (jschEx.getMessage().contains("Auth fail")) {
