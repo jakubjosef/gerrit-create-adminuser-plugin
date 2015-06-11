@@ -10,25 +10,42 @@ import com.google.gerrit.pgm.init.api.InitFlags;
 import com.google.gerrit.pgm.init.api.InitStep;
 import com.google.gerrit.reviewdb.client.*;
 import com.google.gerrit.reviewdb.server.ReviewDb;
+import com.google.gwtorm.server.OrmException;
+import com.google.gwtorm.server.ResultSet;
 import com.google.gwtorm.server.SchemaFactory;
 import com.google.inject.Inject;
 
 import org.apache.commons.validator.routines.EmailValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
+import java.util.*;
 
 public class AddUser implements InitStep {
+
+    private final static Logger logger = LoggerFactory.getLogger(AddUser.class);
+    private final static String NON_INTERACTIVE_USERS = "Non-Interactive Users";
+    private final static String ADMINISTRATORS = "Administrators";
 
     private final ConsoleUI ui;
     private final InitFlags flags;
     private final String pluginName;
     private final AllProjectsConfig allProjectsConfig;
     private SchemaFactory<ReviewDb> dbFactory;
+    private ReviewDb db;
+    
+    private HashMap<Integer, String> groupsMap;
+
+    private String admin_user;
+    private String admin_email;
+    private String admin_fullname;
+    private String admin_pwd;
+    private String users;
 
     @Inject
     AddUser(@PluginName String pluginName, ConsoleUI ui,
@@ -37,6 +54,7 @@ public class AddUser implements InitStep {
         this.allProjectsConfig = allProjectsConfig;
         this.flags = flags;
         this.ui = ui;
+        defineGroups();
     }
 
     @Inject(optional = true)
@@ -44,6 +62,22 @@ public class AddUser implements InitStep {
         this.dbFactory = dbFactory;
     }
 
+    private void defineGroups() {
+        groupsMap = new HashMap<Integer, String>();
+        groupsMap.put(1,ADMINISTRATORS);
+        groupsMap.put(2,NON_INTERACTIVE_USERS);
+    }
+    
+    private Integer getKeyByValue(String stringToSearch) {
+        for (Map.Entry<Integer, String> e : groupsMap.entrySet()) {
+            Object value = e.getValue();
+            if ( value.equals(stringToSearch) ) {
+                return e.getKey();
+            }
+        }
+        return null;
+    }
+    
     @Override
     public void run() throws Exception {
     }
@@ -55,85 +89,186 @@ public class AddUser implements InitStep {
         if (authType != AuthType.DEVELOPMENT_BECOME_ANY_ACCOUNT) {
             return;
         }
-        System.out.println("Auth Type : " + authType);
+        logger.info("Auth Type : " + authType);
 
-        ReviewDb db = dbFactory.open();
+        // Retrieve env variables
+        admin_user = System.getenv("GERRIT_ADMIN_USER");
+        admin_email = System.getenv("GERRIT_ADMIN_EMAIL");
+        admin_fullname = System.getenv("GERRIT_ADMIN_FULLNAME");
+        admin_pwd = System.getenv("GERRIT_ADMIN_PWD");
+        users = System.getenv("GERRIT_ACCOUNTS");
+
+        db = dbFactory.open();
+
         try {
-            if (db.accounts().anyAccounts().toList().isEmpty()) {
-                ui.header("Gerrit Administrator");
-                System.out.println("Create administrator user");
-                Account.Id id = new Account.Id(db.nextAccountId());
-                String username = ui.readString("admin", "username");
-                String name = ui.readString("Administrator", "name");
-                String httpPassword = ui.readString("secret", "HTTP password");
-                AccountSshKey sshKey = readSshKey(id);
-                String email = readEmail(sshKey);
-                AccountExternalId extUser =
-                        new AccountExternalId(id, new AccountExternalId.Key(
-                                AccountExternalId.SCHEME_USERNAME, username));
-                if (!Strings.isNullOrEmpty(httpPassword)) {
-                    extUser.setPassword(httpPassword);
-                }
-                db.accountExternalIds().insert(Collections.singleton(extUser));
-
-                if (email != null) {
-                    AccountExternalId extMailto =
-                            new AccountExternalId(id, new AccountExternalId.Key(
-                                    AccountExternalId.SCHEME_MAILTO, email));
-                    extMailto.setEmailAddress(email);
-                    db.accountExternalIds().insert(Collections.singleton(extMailto));
-                }
-
-                Account a = new Account(id, TimeUtil.nowTs());
-                a.setFullName(name);
-                a.setPreferredEmail(email);
-                db.accounts().insert(Collections.singleton(a));
-
-                AccountGroupMember m =
-                        new AccountGroupMember(new AccountGroupMember.Key(id,
-                                new AccountGroup.Id(1)));
-                db.accountGroupMembers().insert(Collections.singleton(m));
-
-                if (sshKey != null) {
-                    db.accountSshKeys().insert(Collections.singleton(sshKey));
-                }
-            } else {
-                String env_user = System.getenv("GERRIT_ADMIN_USER");
-                String env_email = System.getenv("GERRIT_ADMIN_EMAIL");
-                String env_fullname = System.getenv("GERRIT_ADMIN_FULLNAME");
-                String env_pwd = System.getenv("GERRIT_ADMIN_PWD");
-
-                System.out.println("Admin account already exist.");
-                Account.Id id = Account.Id.parse("1000000");
-
-                Account adm = db.accounts().get(id);
-                adm.setUserName((env_user == null) ? "admin" : env_user);
-                adm.setPreferredEmail((env_email == null) ? "admin@fabric8.io" : env_email);
-                adm.setFullName((env_fullname == null) ? "Administrator" : env_fullname);
-                db.accounts().update(Collections.singleton(adm));
-
-                AccountExternalId.Key extId_key = new AccountExternalId.Key( AccountExternalId.SCHEME_USERNAME, adm.getUserName() );
-                AccountExternalId extUser = db.accountExternalIds().get(extId_key);
-                if (extUser != null) {
-                    extUser.setPassword((env_pwd == null) ? "secret" : env_pwd);
-                    System.out.println("Set admin password : " + extUser.getPassword());
-                    db.accountExternalIds().update(Collections.singleton(extUser));
-                }
-
-                AccountSshKey sshKey = readSshKey(id);
-
-                System.out.println("Full Name :"  + adm.getFullName());
-                System.out.println("User Name :" + adm.getUserName());
-                System.out.println("Email :" + adm.getPreferredEmail());
-
-                if (sshKey != null) {
-                    db.accountSshKeys().insert(Collections.singleton(sshKey));
-                    System.out.println("SSH Key :" + sshKey.getSshPublicKey());
+            if (admin_fullname != null) {
+                List<Account> admins = searchAccount(admin_fullname);
+                if (admins.isEmpty()) {
+                    // TODO - Review this code
+                    add();
+                } else {
+                    for (Account account : admins) {
+                        update(account, admin_user, admin_fullname, admin_email, admin_pwd, null);
+                    }
                 }
             }
+
+            if (users != null) {
+                String[] records = users.split(";");
+
+                if (records != null) {
+                    for (String entry : records) {
+                        String[] userData = entry.split(",");
+                        if (userData != null) {
+                            List<Account> accounts = searchAccount(userData[0]);
+                            if (accounts.isEmpty()) {
+                                add(userData[0], userData[1], userData[2], userData[3], userData[4]);
+                            } else {
+                                for (Account account : accounts) {
+                                    update(account, userData[0], userData[1], userData[2], userData[3], userData[4]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
         } finally {
             db.close();
         }
+    }
+
+    private void add() throws OrmException, IOException {
+        ui.header("Gerrit Administrator");
+        logger.info("Create administrator user");
+        Account.Id id = new Account.Id(db.nextAccountId());
+        String username = ui.readString("admin", "username");
+        String name = ui.readString("Administrator", "name");
+        String httpPassword = ui.readString("secret", "HTTP password");
+        AccountSshKey sshKey = readSshKey(id);
+        String email = readEmail(sshKey);
+        AccountExternalId extUser =
+                new AccountExternalId(id, new AccountExternalId.Key(
+                        AccountExternalId.SCHEME_USERNAME, username));
+        if (!Strings.isNullOrEmpty(httpPassword)) {
+            extUser.setPassword(httpPassword);
+        }
+        db.accountExternalIds().insert(Collections.singleton(extUser));
+
+        if (email != null) {
+            AccountExternalId extMailto =
+                    new AccountExternalId(id, new AccountExternalId.Key(
+                            AccountExternalId.SCHEME_MAILTO, email));
+            extMailto.setEmailAddress(email);
+            db.accountExternalIds().insert(Collections.singleton(extMailto));
+        }
+
+        Account a = new Account(id, TimeUtil.nowTs());
+        a.setFullName(name);
+        a.setPreferredEmail(email);
+        db.accounts().insert(Collections.singleton(a));
+
+        AccountGroupMember m =
+                new AccountGroupMember(new AccountGroupMember.Key(id,
+                        new AccountGroup.Id(1)));
+        db.accountGroupMembers().insert(Collections.singleton(m));
+
+        if (sshKey != null) {
+            db.accountSshKeys().insert(Collections.singleton(sshKey));
+        }
+    }
+
+    private void add(String user, String fullname, String email, String httpPassword, String groups) throws OrmException, IOException {
+
+        logger.info("Create user : " + user);
+        Account.Id id = new Account.Id(db.nextAccountId());
+        
+        // TODO - Retrieve SSH Key
+        // AccountSshKey sshKey = readSshKey(id);
+        
+        AccountExternalId extUser =
+                new AccountExternalId(id, new AccountExternalId.Key(
+                        AccountExternalId.SCHEME_USERNAME, user));
+        if (!Strings.isNullOrEmpty(httpPassword)) {
+            extUser.setPassword(httpPassword);
+        }
+        db.accountExternalIds().insert(Collections.singleton(extUser));
+
+        if (email != null) {
+            AccountExternalId extMailto =
+                    new AccountExternalId(id, new AccountExternalId.Key(
+                            AccountExternalId.SCHEME_MAILTO, email));
+            extMailto.setEmailAddress(email);
+            db.accountExternalIds().insert(Collections.singleton(extMailto));
+        }
+
+        Account a = new Account(id, TimeUtil.nowTs());
+        a.setUserName(user);
+        a.setFullName(fullname);
+        a.setPreferredEmail(email);
+        db.accounts().insert(Collections.singleton(a));
+
+        // TODO ADD Groups based on env var passed
+        for(String group : groups.split(":")) {
+            if (group != null) {
+                AccountGroupMember m = new AccountGroupMember(new AccountGroupMember.Key(id, new AccountGroup.Id(getKeyByValue(group))));
+                db.accountGroupMembers().insert(Collections.singleton(m));
+            }
+        }
+
+        /*  if (sshKey != null) {
+            db.accountSshKeys().insert(Collections.singleton(sshKey));
+        }*/
+    }
+
+    private void update(Account account, String user, String fullname, String email, String pwd, String groups) throws OrmException, IOException {
+
+        Account.Id id = account.getId();
+
+        if (id.equals(ADMIN_ACCOUNT_ID())) {
+            account.setUserName(user);
+            account.setFullName(fullname);
+            account.setPreferredEmail(email);
+            db.accounts().update(Collections.singleton(account));
+
+            AccountExternalId.Key extId_key = new AccountExternalId.Key(AccountExternalId.SCHEME_USERNAME, account.getUserName());
+            AccountExternalId extUser = db.accountExternalIds().get(extId_key);
+            if (extUser != null) {
+                extUser.setPassword((pwd == null) ? "secret" : pwd);
+                db.accountExternalIds().update(Collections.singleton(extUser));
+            }
+
+            AccountSshKey sshKey = readSshKey(id);
+
+            if (sshKey != null) {
+                db.accountSshKeys().insert(Collections.singleton(sshKey));
+            }
+
+        } else {
+            account.setUserName(user);
+            account.setFullName(fullname);
+            account.setPreferredEmail(email);
+            db.accounts().update(Collections.singleton(account));
+
+            AccountExternalId.Key extId_key = new AccountExternalId.Key(AccountExternalId.SCHEME_USERNAME, account.getUserName());
+            AccountExternalId extUser = db.accountExternalIds().get(extId_key);
+            if (extUser != null) {
+                extUser.setPassword((pwd == null) ? "secret" : pwd);
+                db.accountExternalIds().update(Collections.singleton(extUser));
+            }
+
+            AccountSshKey sshKey = readSshKey(id);
+
+            if (sshKey != null) {
+                db.accountSshKeys().insert(Collections.singleton(sshKey));
+            }
+        }
+
+
+    }
+
+    private void add(String user, String fullname, String email, String pwd) {
+
     }
 
     private String readEmail(AccountSshKey sshKey) {
@@ -161,7 +296,7 @@ public class AddUser implements InitStep {
         Path defaultPublicSshKeyPath =
                 Paths.get(System.getProperty("user.home"), ".ssh", "id_rsa.pub");
         if (Files.exists(defaultPublicSshKeyPath)) {
-            System.out.println("SSH Key exist");
+            logger.info("SSH Key exist");
             defaultPublicSshKeyFile = defaultPublicSshKeyPath.toString();
         }
         String publicSshKeyFile =
@@ -179,5 +314,21 @@ public class AddUser implements InitStep {
         }
         String content = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
         return new AccountSshKey(new AccountSshKey.Id(id, 0), content);
+    }
+
+    private static Account.Id ADMIN_ACCOUNT_ID() {
+        return Account.Id.parse("1000000");
+    }
+
+    private List<Account> searchAccount(String fullname) throws OrmException {
+        ResultSet<Account> result = db.accounts().byFullName(fullname);
+        List<Account> accounts = result.toList();
+
+        if (!accounts.isEmpty()) {
+            return accounts;
+        } else {
+            return new ArrayList<Account>();
+        }
+
     }
 }
