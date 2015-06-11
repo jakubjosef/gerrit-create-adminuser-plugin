@@ -31,6 +31,8 @@ public class AddUser implements InitStep {
     private final static Logger logger = LoggerFactory.getLogger(AddUser.class);
     private final static String NON_INTERACTIVE_USERS = "Non-Interactive Users";
     private final static String ADMINISTRATORS = "Administrators";
+    private final static String SSH_PREFIX = "id_";
+    private final static String SSH_SUFFIX = "_rsa.pub";
 
     private final ConsoleUI ui;
     private final InitFlags flags;
@@ -38,7 +40,7 @@ public class AddUser implements InitStep {
     private final AllProjectsConfig allProjectsConfig;
     private SchemaFactory<ReviewDb> dbFactory;
     private ReviewDb db;
-    
+
     private HashMap<Integer, String> groupsMap;
 
     private String admin_user;
@@ -46,6 +48,7 @@ public class AddUser implements InitStep {
     private String admin_fullname;
     private String admin_pwd;
     private String users;
+    private String sshPath;
 
     @Inject
     AddUser(@PluginName String pluginName, ConsoleUI ui,
@@ -64,20 +67,20 @@ public class AddUser implements InitStep {
 
     private void defineGroups() {
         groupsMap = new HashMap<Integer, String>();
-        groupsMap.put(1,ADMINISTRATORS);
-        groupsMap.put(2,NON_INTERACTIVE_USERS);
+        groupsMap.put(1, ADMINISTRATORS);
+        groupsMap.put(2, NON_INTERACTIVE_USERS);
     }
-    
+
     private Integer getKeyByValue(String stringToSearch) {
         for (Map.Entry<Integer, String> e : groupsMap.entrySet()) {
             Object value = e.getValue();
-            if ( value.equals(stringToSearch) ) {
+            if (value.equals(stringToSearch)) {
                 return e.getKey();
             }
         }
         return null;
     }
-    
+
     @Override
     public void run() throws Exception {
     }
@@ -97,6 +100,7 @@ public class AddUser implements InitStep {
         admin_fullname = System.getenv("GERRIT_ADMIN_FULLNAME");
         admin_pwd = System.getenv("GERRIT_ADMIN_PWD");
         users = System.getenv("GERRIT_ACCOUNTS");
+        sshPath = System.getenv("GERRIT_SSH_PATH");
 
         db = dbFactory.open();
 
@@ -138,6 +142,7 @@ public class AddUser implements InitStep {
         }
     }
 
+    // TODO Review  code to add first ADMIN USER
     private void add() throws OrmException, IOException {
         ui.header("Gerrit Administrator");
         logger.info("Create administrator user");
@@ -182,10 +187,9 @@ public class AddUser implements InitStep {
 
         logger.info("Create user : " + user);
         Account.Id id = new Account.Id(db.nextAccountId());
-        
-        // TODO - Retrieve SSH Key
-        // AccountSshKey sshKey = readSshKey(id);
-        
+
+        AccountSshKey sshKey = retrieveSshKey(sshPath, user, id);
+
         AccountExternalId extUser =
                 new AccountExternalId(id, new AccountExternalId.Key(
                         AccountExternalId.SCHEME_USERNAME, user));
@@ -208,17 +212,18 @@ public class AddUser implements InitStep {
         a.setPreferredEmail(email);
         db.accounts().insert(Collections.singleton(a));
 
-        // TODO ADD Groups based on env var passed
-        for(String group : groups.split(":")) {
-            if (group != null) {
-                AccountGroupMember m = new AccountGroupMember(new AccountGroupMember.Key(id, new AccountGroup.Id(getKeyByValue(group))));
-                db.accountGroupMembers().insert(Collections.singleton(m));
+        if (groups != null) {
+            for (String group : groups.split(":")) {
+                if (group != null) {
+                    AccountGroupMember m = new AccountGroupMember(new AccountGroupMember.Key(id, new AccountGroup.Id(getKeyByValue(group))));
+                    db.accountGroupMembers().insert(Collections.singleton(m));
+                }
             }
         }
 
-        /*  if (sshKey != null) {
+        if (sshKey != null) {
             db.accountSshKeys().insert(Collections.singleton(sshKey));
-        }*/
+        }
     }
 
     private void update(Account account, String user, String fullname, String email, String pwd, String groups) throws OrmException, IOException {
@@ -289,6 +294,18 @@ public class AddUser implements InitStep {
             return readEmail(defaultEmail);
         }
         return email;
+    }
+
+    private AccountSshKey retrieveSshKey(String location, String user, Account.Id id) throws IOException {
+        String userPublicSshKeyFile = "";
+        String sshKeyFileToSearch = SSH_PREFIX + user + SSH_SUFFIX;
+        
+        Path userPublicSshKeyPath = Paths.get(location, sshKeyFileToSearch);
+        if (Files.exists(userPublicSshKeyPath)) {
+            userPublicSshKeyFile = userPublicSshKeyPath.toString();
+        }
+        return createSshKey(id, userPublicSshKeyFile);
+
     }
 
     private AccountSshKey readSshKey(Account.Id id) throws IOException {
