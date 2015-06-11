@@ -1,4 +1,4 @@
-package com.googlesource.gerrit.plugins.admin;
+package com.googlesource.gerrit.plugins;
 
 
 import com.google.common.base.Strings;
@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 
-public class InitAdminUser implements InitStep {
+public class AddUser implements InitStep {
 
     private final ConsoleUI ui;
     private final InitFlags flags;
@@ -31,8 +31,8 @@ public class InitAdminUser implements InitStep {
     private SchemaFactory<ReviewDb> dbFactory;
 
     @Inject
-    InitAdminUser(@PluginName String pluginName, ConsoleUI ui,
-                  AllProjectsConfig allProjectsConfig, InitFlags flags) {
+    AddUser(@PluginName String pluginName, ConsoleUI ui,
+            AllProjectsConfig allProjectsConfig, InitFlags flags) {
         this.pluginName = pluginName;
         this.allProjectsConfig = allProjectsConfig;
         this.flags = flags;

@@ -3,11 +3,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.googlesource.gerrit.plugins.admin</groupId>
-    <artifactId>create-user-plugin</artifactId>
+    <groupId>com.googlesource.gerrit.plugins</groupId>
+    <artifactId>add-user-plugin</artifactId>
     <packaging>jar</packaging>
     <version>2.11</version>
-    <name>Gerrit Plugins :: Create Users</name>
+    <name>Gerrit Plugins :: Add user</name>
 
     <properties>
         <Gerrit-ApiType>plugin</Gerrit-ApiType>
@@ -24,7 +24,7 @@
                     <archive>
                         <manifestEntries>
                             <Gerrit-PluginName>create-admin-user</Gerrit-PluginName>
-                            <Gerrit-InitStep>com.googlesource.gerrit.plugins.admin.InitAdminUser</Gerrit-InitStep>
+                            <Gerrit-InitStep>com.googlesource.gerrit.plugins.AddUser</Gerrit-InitStep>
 
                             <Implementation-Vendor>Gerrit Code Review</Implementation-Vendor>
                             <Implementation-URL>http://code.google.com/p/gerrit/</Implementation-URL>
