@@ -19,7 +19,9 @@ import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -310,8 +312,9 @@ public class AddUser implements InitStep {
 
     private AccountSshKey readSshKey(Account.Id id) throws IOException {
         String defaultPublicSshKeyFile = "";
+        String homeDir = findHomeDir(); // System.getProperty("user.home");
         Path defaultPublicSshKeyPath =
-                Paths.get(System.getProperty("user.home"), ".ssh", "id_rsa.pub");
+                Paths.get(homeDir, ".ssh", "id_rsa.pub");
         if (Files.exists(defaultPublicSshKeyPath)) {
             logger.info("SSH Key exist");
             defaultPublicSshKeyFile = defaultPublicSshKeyPath.toString();
@@ -346,6 +349,33 @@ public class AddUser implements InitStep {
         } else {
             return new ArrayList<Account>();
         }
+    }
+    
+    private String findHomeDir() throws IOException {
+        StringBuilder builder = new StringBuilder();
+        String[] cmdline = { "sh", "-c", "eval echo $HOME" };
+        Process proc = Runtime.getRuntime().exec(cmdline);
 
+        BufferedReader stdInput = new BufferedReader(new
+                InputStreamReader(proc.getInputStream()));
+
+        BufferedReader stdError = new BufferedReader(new
+                InputStreamReader(proc.getErrorStream()));
+
+        // Read the output from the command
+        logger.info("Home Dir :\n");
+        String s = null;
+        while ((s = stdInput.readLine()) != null) {
+            builder.append(s);
+        }
+
+        // Read any errors from the attempted command
+        logger.info("Here is the standard error of the command (if any):\n");
+        while ((s = stdError.readLine()) != null) {
+            logger.info(s);
+        }
+        
+        return builder.toString();
+        
     }
 }
