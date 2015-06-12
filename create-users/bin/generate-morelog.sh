@@ -5,6 +5,8 @@ export GERRIT_ADMIN_USER='admin'
 export GERRIT_ADMIN_FULLNAME='Administrator'
 export GERRIT_ADMIN_EMAIL='admin1@fabric8.io'
 export GERRIT_ADMIN_PWD='mysecret'
+export GERRIT_ACCOUNTS='jenkins,jenkins,jenkins@fabric8.io,secret,Non-Interactive Users:Administrators;sonar,sonar,sonar@fabric8.io,secret,Non-Interactive Users'
+export GERRIT_SSH_PATH='/Users/chmoulli/MyProjects/gerrit-plugins/create-users/ssh-keys'
 
 java -jar target/gerrit.war init --batch --no-auto-start -d target/gerrit-site
 
