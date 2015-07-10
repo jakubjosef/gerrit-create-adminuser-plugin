@@ -1,20 +1,12 @@
-# Instructions followed to test the plugin
+# Instructions to test the plugin
 
-- Create the plugin maven project using the maven archetype
-
-
-```
-mvn archetype:generate -DarchetypeGroupId=com.google.gerrit -DarchetypeArtifactId=gerrit-plugin-archetype  -DarchetypeVersion=2.11 -DgroupId=com.googlesource.gerrit.plugins.admin -DartifactId=createuserplugin
-```
-
-
-- Download gerrit-war
+### Download gerrit-war
 
 ```
 curl -L -o target/gerrit.war https://gerrit-releases.storage.googleapis.com/gerrit-2.11.war
 ```
 
-- Generate a new gerrit site, copy our gerrit.config where the authentication type is defined to "DEVELOPMENT_BECOME_ACCOUNT" & the plugin generate to create a default admin user and import your ssh public key
+### Generate a new gerrit site, copy our gerrit.config where the authentication type is defined to "DEVELOPMENT_BECOME_ACCOUNT" & the plugin generate to create a default admin user and import your ssh public key
 
 ```
 ./target/gerrit-site/bin/gerrit.sh stop
@@ -23,14 +15,15 @@ export GERRIT_ADMIN_USER='admin'
 export GERRIT_ADMIN_FULLNAME='Administrator'
 export GERRIT_ADMIN_EMAIL='admin1@fabric8.io'
 export GERRIT_ADMIN_PWD='mysecret'
+export GERRIT_PUBLIC_KEYS_PATH=<some/path/to/public/keys>
 java -jar target/gerrit.war init --batch --no-auto-start -d target/gerrit-site
-cp target/create-user-plugin-2.11.jar target/gerrit-site/plugins/
+cp target/add-user-plugin-2.11.jar target/gerrit-site/plugins/
 cp config/gerrit.config target/gerrit-site/etc
 java -jar target/gerrit.war init --batch -d target/gerrit-site
 ./target/gerrit-site/bin/gerrit.sh start
 ```
 
-- To debug
+### To debug
 
 ```
 ./target/gerrit-site/bin/gerrit.sh stop
@@ -39,17 +32,49 @@ export GERRIT_ADMIN_USER='admin'
 export GERRIT_ADMIN_FULLNAME='Administrator'
 export GERRIT_ADMIN_EMAIL='admin1@fabric8.io'
 export GERRIT_ADMIN_PWD='mysecret'
+export GERRIT_PUBLIC_KEYS_PATH=<some/path/to/public/keys>
 java -jar target/gerrit.war init --batch --no-auto-start -d target/gerrit-site
-cp target/create-user-plugin-2.11.jar target/gerrit-site/plugins/
+cp target/add-user-plugin-2.11.jar target/gerrit-site/plugins/
 cp config/gerrit.config target/gerrit-site/etc
 java -Xdebug -Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y -jar target/gerrit.war init --batch -d target/gerrit-site
 ```
 
-- Open the web browser at the address `http://localhost:8080/login/%23%2F` and check if the admin user exists
+### Open the web browser at the address `http://localhost:8080/login/%23%2F` and check whether the admin user exists
 
 ![Admin User](admin_user.png)
 
-- Commands used to start/stop, check status
+## Environment variables, misc scripts
+There are a handful of environment variables that you can use to affect the behavior of the plugin. Also, see below for 
+more information on scripts that can be used to start/stop gerrit and check the status of some of the internals
+
+### Environment variables
+
+Add user plugin:
+
+- GERRIT_ADMIN_USER - the name of the admin user to create if one does not exist, or of an existing admin user to update
+- GERRIT_ADMIN_EMAIL - the email to use for creating/updating the admin user
+- GERRIT_ADMIN_FULLNAME - the admin user's full name to be displayed, ie, Administrator or John Doe
+- GERRIT_ADMIN_PWD - the HTTP password to assign to the admin user; can be used for git http access
+- GERRIT_ACCOUNTS - a `;` delimited string of user accounts to automatically create when first starting up. example: 
+    `'jenkins,jenkins,jenkins@fabric8.io,secret,Non-Interactive Users:Administrators;sonar,sonar,sonar@fabric8.io,secret,Non-Interactive Users'`
+    the format of the string is `<user_id><full_name><email><password><roles/groups>`
+- GERRIT_PUBLIC_KEYS_PATH - the location/path on disk for where the admin and any users (if applicable, pass as GERRIT_ACCOUNTS described above) public keys should be found. By default, public keys will be matched by this convention `id_`user_id`_rsa.pub` 
+
+- GERRIT_USER_PUBLIC_KEY_PREFIX - you can change the default prefix of the public keys which is `id_`
+- GERRIT_USER_PUBLIC_KEY_SUFFIX - you can change the default suffix of the public keys which is `_rsa.pub`
+
+Change project config plugin:
+
+- GERRIT_GIT_LOCALPATH - location on disk that the gerrit plugin will use to checkout any gerrit-specific config files
+- GERRIT_GIT_REMOTEPATH - the location in a running gerrit instance where the config project resides
+- GERRIT_GIT_PROJECT_CONFIG - the config file to use (replace) when updating the gerrit config
+- GERRIT_ADMIN_PRIVATE_KEY - the location and name of the admin private key to use to connect to the gerrit config repo as admin user eg, `/path/to/file/id_rsa`
+- GERRIT_ADMIN_PRIVATE_KEY_PASSWORD - the password to use the private key, if applicable. if there is no password, just leave it blank
+        
+
+                
+                
+### Commands used to start/stop, check status
 
 ```
 ./target/gerrit-site/bin/gerrit.sh start

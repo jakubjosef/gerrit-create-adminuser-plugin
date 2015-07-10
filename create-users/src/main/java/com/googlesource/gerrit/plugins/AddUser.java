@@ -51,6 +51,8 @@ public class AddUser implements InitStep {
     private String admin_pwd;
     private String users;
     private String sshPath;
+    private String sshPrefix;
+    private String sshSuffix;
 
     @Inject
     AddUser(@PluginName String pluginName, ConsoleUI ui,
@@ -102,7 +104,9 @@ public class AddUser implements InitStep {
         admin_fullname = System.getenv("GERRIT_ADMIN_FULLNAME");
         admin_pwd = System.getenv("GERRIT_ADMIN_PWD");
         users = System.getenv("GERRIT_ACCOUNTS");
-        sshPath = System.getenv("GERRIT_SSH_PATH");
+        sshPath = System.getenv("GERRIT_PUBLIC_KEYS_PATH");
+        sshPrefix = lookupFromEnvironmentVariables("GERRIT_USER_PUBLIC_KEY_PREFIX", SSH_PREFIX);
+        sshSuffix = lookupFromEnvironmentVariables("GERRIT_USER_PUBLIC_KEY_SUFFIX", SSH_SUFFIX);
 
         db = dbFactory.open();
 
@@ -144,6 +148,14 @@ public class AddUser implements InitStep {
         }
     }
 
+    private String lookupFromEnvironmentVariables(String env, String defaultValue) {
+        String rc = System.getenv(env);
+        if (rc == null || rc.isEmpty()) {
+            return defaultValue;
+        }
+        return rc;
+    }
+
     // TODO Review  code to add first ADMIN USER
     private void add() throws OrmException, IOException {
         ui.header("Gerrit Administrator");
@@ -152,7 +164,7 @@ public class AddUser implements InitStep {
         String username = ui.readString("admin", "username");
         String name = ui.readString("Administrator", "name");
         String httpPassword = ui.readString("secret", "HTTP password");
-        AccountSshKey sshKey = readSshKey(id);
+        AccountSshKey sshKey = retrieveSshKey(username, id);
         String email = readEmail(sshKey);
         AccountExternalId extUser =
                 new AccountExternalId(id, new AccountExternalId.Key(
@@ -190,7 +202,7 @@ public class AddUser implements InitStep {
         logger.info("Create user : " + user);
         Account.Id id = new Account.Id(db.nextAccountId());
 
-        AccountSshKey sshKey = retrieveSshKey(sshPath, user, id);
+        AccountSshKey sshKey = retrieveSshKey(user, id);
 
         AccountExternalId extUser =
                 new AccountExternalId(id, new AccountExternalId.Key(
@@ -245,7 +257,7 @@ public class AddUser implements InitStep {
                 db.accountExternalIds().update(Collections.singleton(extUser));
             }
 
-            AccountSshKey sshKey = readSshKey(id);
+            AccountSshKey sshKey = retrieveSshKey(user, id);
 
             if (sshKey != null) {
                 db.accountSshKeys().insert(Collections.singleton(sshKey));
@@ -264,17 +276,13 @@ public class AddUser implements InitStep {
                 db.accountExternalIds().update(Collections.singleton(extUser));
             }
 
-            AccountSshKey sshKey = readSshKey(id);
+            AccountSshKey sshKey = retrieveSshKey(user, id);
 
             if (sshKey != null) {
                 db.accountSshKeys().insert(Collections.singleton(sshKey));
             }
         }
 
-
-    }
-
-    private void add(String user, String fullname, String email, String pwd) {
 
     }
 
@@ -298,11 +306,11 @@ public class AddUser implements InitStep {
         return email;
     }
 
-    private AccountSshKey retrieveSshKey(String location, String user, Account.Id id) throws IOException {
+    private AccountSshKey retrieveSshKey(String user, Account.Id id) throws IOException {
         String userPublicSshKeyFile = "";
-        String sshKeyFileToSearch = SSH_PREFIX + user + SSH_SUFFIX;
+        String sshKeyFileToSearch = sshPrefix + user + sshSuffix;
         
-        Path userPublicSshKeyPath = Paths.get(location, sshKeyFileToSearch);
+        Path userPublicSshKeyPath = Paths.get(sshPath, sshKeyFileToSearch);
         if (Files.exists(userPublicSshKeyPath)) {
             userPublicSshKeyFile = userPublicSshKeyPath.toString();
         }
@@ -310,20 +318,6 @@ public class AddUser implements InitStep {
 
     }
 
-    private AccountSshKey readSshKey(Account.Id id) throws IOException {
-        String defaultPublicSshKeyFile = "";
-        String homeDir = findHomeDir(); // System.getProperty("user.home");
-        Path defaultPublicSshKeyPath =
-                Paths.get(homeDir, ".ssh", "id_rsa.pub");
-        if (Files.exists(defaultPublicSshKeyPath)) {
-            logger.info("SSH Key exist");
-            defaultPublicSshKeyFile = defaultPublicSshKeyPath.toString();
-        }
-        String publicSshKeyFile =
-                ui.readString(defaultPublicSshKeyFile, "public SSH key file");
-        return !Strings.isNullOrEmpty(publicSshKeyFile)
-                ? createSshKey(id, publicSshKeyFile) : null;
-    }
 
     private AccountSshKey createSshKey(Account.Id id, String keyFile)
             throws IOException {
@@ -349,33 +343,5 @@ public class AddUser implements InitStep {
         } else {
             return new ArrayList<Account>();
         }
-    }
-    
-    private String findHomeDir() throws IOException {
-        StringBuilder builder = new StringBuilder();
-        String[] cmdline = { "sh", "-c", "eval echo $HOME" };
-        Process proc = Runtime.getRuntime().exec(cmdline);
-
-        BufferedReader stdInput = new BufferedReader(new
-                InputStreamReader(proc.getInputStream()));
-
-        BufferedReader stdError = new BufferedReader(new
-                InputStreamReader(proc.getErrorStream()));
-
-        // Read the output from the command
-        logger.info("Home Dir :\n");
-        String s = null;
-        while ((s = stdInput.readLine()) != null) {
-            builder.append(s);
-        }
-
-        // Read any errors from the attempted command
-        logger.info("Here is the standard error of the command (if any):\n");
-        while ((s = stdError.readLine()) != null) {
-            logger.info(s);
-        }
-        
-        return builder.toString();
-        
     }
 }
