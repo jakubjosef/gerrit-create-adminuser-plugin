@@ -1,6 +1,8 @@
 package io.fabric8.docker.gerrit;
 
 
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -17,6 +19,8 @@ import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.*;
+import org.eclipse.jgit.util.FS;
+import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -30,14 +34,40 @@ public class PushCommit {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ChangeProjectConfig.class);
     private final static String COMMIT_MESSAGE = "Change project permissions to allow access for NonInteractive Users";
 
-    private String localPath, remotePath, projectConfig;
+    final private String localPath, remotePath, projectConfig, adminPrivateKeyPath, adminPrivateKeyPassword;
     private Git git;
     private Repository repo;
+    final SshSessionFactory sshSessionFactory;
 
     PushCommit(String localPath, String remotePath, String projectConfig) {
         this.localPath = localPath;
         this.remotePath = remotePath;
         this.projectConfig = projectConfig;
+
+        adminPrivateKeyPath = System.getenv("GERRIT_ADMIN_PRIVATE_KEY");
+        adminPrivateKeyPassword = System.getenv("GERRIT_ADMIN_PRIVATE_KEY_PASSWORD");
+
+        sshSessionFactory = new JschConfigSessionFactory() {
+            @Override
+            protected void configure(OpenSshConfig.Host host, Session session) {
+                session.setConfig("StrictHostKeyChecking", "no");
+            }
+
+            @Override
+            protected JSch createDefaultJSch(FS fs) throws JSchException {
+                JSch jsch = super.createDefaultJSch(fs);
+                if (!StringUtils.isEmptyOrNull(adminPrivateKeyPath)) {
+                    logger.info("Using specified location for admin SSH private keys: " + adminPrivateKeyPath);
+                    if (!StringUtils.isEmptyOrNull(adminPrivateKeyPassword)) {
+                        logger.info("Using the associated password with the private key (see the env variables)");
+                        jsch.addIdentity(adminPrivateKeyPath, adminPrivateKeyPassword);
+                    } else {
+                        jsch.addIdentity(adminPrivateKeyPath);
+                    }
+                }
+                return jsch;
+            }
+        };
     }
 
     public void init() {
@@ -109,26 +139,20 @@ public class PushCommit {
 
     public void fetch() throws GitAPIException {
 
-        final SshSessionFactory sshSessionFactory = new JschConfigSessionFactory() {
-            @Override
-            protected void configure(OpenSshConfig.Host host, Session session) {
-                session.setConfig("StrictHostKeyChecking", "no");
-            }
-        };
-
         TransportConfigCallback tccb = new TransportConfigCallback() {
+
             @Override
             public void configure(Transport transport) {
                 SshTransport sshTransport = (SshTransport) transport;
                 sshTransport.setSshSessionFactory(sshSessionFactory);
             }
+
         };
 
         RefSpec refspec = new RefSpec("refs/meta/config:refs/remotes/origin/meta/config");
         git.fetch()
                 .setTransportConfigCallback(tccb)
                 .setRemote("origin")
-                .setCredentialsProvider(new UsernamePasswordCredentialsProvider("admin", ""))
                 .setRefSpecs(refspec)
                 .call();
     }
@@ -166,13 +190,6 @@ public class PushCommit {
     }
 
     public void pushChange() {
-
-        final SshSessionFactory sshSessionFactory = new JschConfigSessionFactory() {
-            @Override
-            protected void configure(OpenSshConfig.Host host, Session session) {
-                session.setConfig("StrictHostKeyChecking", "no");
-            }
-        };
 
         TransportConfigCallback tccb = new TransportConfigCallback() {
             @Override
