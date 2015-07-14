@@ -3,16 +3,17 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.googlesource.gerrit.plugins</groupId>
-    <artifactId>add-user-plugin</artifactId>
-    <packaging>jar</packaging>
-    <version>2.11</version>
-    <name>Gerrit Plugins :: Add user</name>
 
-    <properties>
-        <Gerrit-ApiType>plugin</Gerrit-ApiType>
-        <Gerrit-ApiVersion>2.11</Gerrit-ApiVersion>
-    </properties>
+  <groupId>com.googlesource.gerrit.plugins</groupId>
+  <artifactId>add-user-plugin</artifactId>
+  <packaging>jar</packaging>
+  <version>2.11.1</version>
+  <name>Gerrit Plugins :: Add user</name>
+
+  <properties>
+      <Gerrit-ApiType>plugin</Gerrit-ApiType>
+      <Gerrit-ApiVersion>2.11</Gerrit-ApiVersion>
+  </properties>
 
     <build>
         <plugins>
