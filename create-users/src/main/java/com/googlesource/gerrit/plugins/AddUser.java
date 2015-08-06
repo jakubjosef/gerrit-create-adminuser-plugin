@@ -107,40 +107,38 @@ public class AddUser implements InitStep {
         sshPath = System.getenv("GERRIT_PUBLIC_KEYS_PATH");
         sshPrefix = lookupFromEnvironmentVariables("GERRIT_USER_PUBLIC_KEY_PREFIX", SSH_PREFIX);
         sshSuffix = lookupFromEnvironmentVariables("GERRIT_USER_PUBLIC_KEY_SUFFIX", SSH_SUFFIX);
-        boolean updateAdminWithSSHCredentials = Boolean.getBoolean(lookupFromEnvironmentVariables("GERRIT_ADD_ADMIN_USER", "true"));
 
 
         db = dbFactory.open();
 
         try {
+            // must have an admin fullname for us to do any other steps
             if (admin_fullname != null) {
                 List<Account> admins = searchAccount(admin_fullname);
                 if (admins.isEmpty()) {
                     // TODO - Review this code
                     add();
                 } else {
-                    // we already have an ADMIN.. do we want to update it?
-                    if (updateAdminWithSSHCredentials) {
-                        for (Account account : admins) {
-                            update(account, admin_user, admin_fullname, admin_email, admin_pwd, null);
-                        }
+                    for (Account account : admins) {
+                        update(account, admin_user, admin_fullname, admin_email, admin_pwd, null);
                     }
                 }
-            }
 
-            if (users != null) {
-                String[] records = users.split(";");
 
-                if (records != null) {
-                    for (String entry : records) {
-                        String[] userData = entry.split(",");
-                        if (userData != null) {
-                            List<Account> accounts = searchAccount(userData[0]);
-                            if (accounts.isEmpty()) {
-                                add(userData[0], userData[1], userData[2], userData[3], userData[4]);
-                            } else {
-                                for (Account account : accounts) {
-                                    update(account, userData[0], userData[1], userData[2], userData[3], userData[4]);
+                if (users != null) {
+                    String[] records = users.split(";");
+
+                    if (records != null) {
+                        for (String entry : records) {
+                            String[] userData = entry.split(",");
+                            if (userData != null) {
+                                List<Account> accounts = searchAccount(userData[0]);
+                                if (accounts.isEmpty()) {
+                                    add(userData[0], userData[1], userData[2], userData[3], userData[4]);
+                                } else {
+                                    for (Account account : accounts) {
+                                        update(account, userData[0], userData[1], userData[2], userData[3], userData[4]);
+                                    }
                                 }
                             }
                         }

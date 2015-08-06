@@ -53,7 +53,7 @@ Add user plugin:
 
 - GERRIT_ADMIN_USER - the name of the admin user to create if one does not exist, or of an existing admin user to update
 - GERRIT_ADMIN_EMAIL - the email to use for creating/updating the admin user
-- GERRIT_ADMIN_FULLNAME - the admin user's full name to be displayed, ie, Administrator or John Doe
+- GERRIT_ADMIN_FULLNAME - the admin user's full name to be displayed, ie, Administrator or John Doe. There is no default for this value. If the value is ommitted, then the admin user will NOT be set up with the SSH keys AND none of the users will be added (including their SSH keys). Basically if this value is empty we will not attempt any custom set up. If it has a value, we will also look at the SSH environment variables and GERRIT_ACCOUNTS environment variable to preconfigure additional users.
 - GERRIT_ADMIN_PWD - the HTTP password to assign to the admin user; can be used for git http access
 - GERRIT_ACCOUNTS - a `;` delimited string of user accounts to automatically create when first starting up. example: 
     `'jenkins,jenkins,jenkins@fabric8.io,secret,Non-Interactive Users:Administrators;sonar,sonar,sonar@fabric8.io,secret,Non-Interactive Users'`
@@ -70,8 +70,7 @@ Change project config plugin:
 - GERRIT_GIT_PROJECT_CONFIG - the config file to use (replace) when updating the gerrit config
 - GERRIT_ADMIN_PRIVATE_KEY - the location and name of the admin private key to use to connect to the gerrit config repo as admin user eg, `/path/to/file/id_rsa`
 - GERRIT_ADMIN_PRIVATE_KEY_PASSWORD - the password to use the private key, if applicable. if there is no password, just leave it blank
-- GERRIT_ADD_ADMIN_USER - Whether or not to add the admin user. Values can be "true" or "false". Defaults to "true" If this is "false", then we skip trying to add SSH keys, etc. to the admin user. If you have this set to "true", then all locations of the SSH keys, etc should be accessible (ie if running in Docker, a volume should be mounted). Also, if this is "false" we will skip adding user permissions (see below)
-- SKIP_UPDATE_USER_PERMS - Whether to skip updating the user permissions (ie, jenkins can vote). default is "false"
+
         
 
                 

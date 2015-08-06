@@ -20,9 +20,8 @@ public class ChangeProjectConfig {
 
     public static void main(String[] args) throws InterruptedException, JSchException {
 
-        String skipUpdate = System.getenv("SKIP_UPDATE_USER_PERMS");
-        String addAdmin = System.getenv("GERRIT_ADD_ADMIN_USER");
-        if (!("true".equals(skipUpdate)) || "false".equals(addAdmin)) {
+
+        if (haveAdmin(System.getenv("GERRIT_ADMIN_FULLNAME"))) {
 
             Lock lock = new ReentrantLock();
             Condition cond = lock.newCondition();
@@ -51,6 +50,10 @@ public class ChangeProjectConfig {
             gitPushCommit.init();
             lock.unlock();
         }
+    }
+
+    private static boolean haveAdmin(String adminFullname) {
+        return (adminFullname != null) && !adminFullname.isEmpty();
     }
 
     private static boolean sshdAvailable(int port) throws JSchException {
