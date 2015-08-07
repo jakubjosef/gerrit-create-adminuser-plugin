@@ -107,6 +107,8 @@ public class AddUser implements InitStep {
         sshPath = System.getenv("GERRIT_PUBLIC_KEYS_PATH");
         sshPrefix = lookupFromEnvironmentVariables("GERRIT_USER_PUBLIC_KEY_PREFIX", SSH_PREFIX);
         sshSuffix = lookupFromEnvironmentVariables("GERRIT_USER_PUBLIC_KEY_SUFFIX", SSH_SUFFIX);
+        boolean updateAdminWithSSHCredentials = Boolean.getBoolean(lookupFromEnvironmentVariables("GERRIT_ADD_ADMIN_USER", "true"));
+
 
         db = dbFactory.open();
 
@@ -117,8 +119,11 @@ public class AddUser implements InitStep {
                     // TODO - Review this code
                     add();
                 } else {
-                    for (Account account : admins) {
-                        update(account, admin_user, admin_fullname, admin_email, admin_pwd, null);
+                    // we already have an ADMIN.. do we want to update it?
+                    if (updateAdminWithSSHCredentials) {
+                        for (Account account : admins) {
+                            update(account, admin_user, admin_fullname, admin_email, admin_pwd, null);
+                        }
                     }
                 }
             }

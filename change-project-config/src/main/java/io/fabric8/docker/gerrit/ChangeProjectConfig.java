@@ -18,34 +18,39 @@ public class ChangeProjectConfig {
             adminPrivateKeyPath, adminPrivateKeyPassword;
     private static  int counter = 0;
 
-    public static void main(String[] args) throws InterruptedException, JSchException{
+    public static void main(String[] args) throws InterruptedException, JSchException {
 
-        Lock lock = new ReentrantLock();
-        Condition cond = lock.newCondition();
+        String skipUpdate = System.getenv("SKIP_UPDATE_USER_PERMS");
+        String addAdmin = System.getenv("GERRIT_ADD_ADMIN_USER");
+        if (!("true".equals(skipUpdate)) || "false".equals(addAdmin)) {
 
-        localPath = System.getenv("GERRIT_GIT_LOCALPATH");
-        remotePath = System.getenv("GERRIT_GIT_REMOTEPATH");
-        projectConfig = System.getenv("GERRIT_GIT_PROJECT_CONFIG");
-        adminPrivateKeyPath = System.getenv("GERRIT_ADMIN_PRIVATE_KEY");
-        adminPrivateKeyPassword = System.getenv("GERRIT_ADMIN_PRIVATE_KEY_PASSWORD");
+            Lock lock = new ReentrantLock();
+            Condition cond = lock.newCondition();
 
-
-        String myLocalPath = (localPath == null) ? "/home/gerrit/git" : localPath;
-        String myRemotePath = (remotePath == null) ? "ssh://admin@localhost:29418/All-Projects" : remotePath;
-        String myProjectConfig = (projectConfig == null) ? "/home/gerrit/config" : projectConfig;
-
-        logger.info("Using these settings from the environment: localPath='{}', remotePath='{}', projectConfig='{}', " +
-                "adminPrivateKeyPath='{}'", myLocalPath, myRemotePath, myProjectConfig, adminPrivateKeyPath);
+            localPath = System.getenv("GERRIT_GIT_LOCALPATH");
+            remotePath = System.getenv("GERRIT_GIT_REMOTEPATH");
+            projectConfig = System.getenv("GERRIT_GIT_PROJECT_CONFIG");
+            adminPrivateKeyPath = System.getenv("GERRIT_ADMIN_PRIVATE_KEY");
+            adminPrivateKeyPassword = System.getenv("GERRIT_ADMIN_PRIVATE_KEY_PASSWORD");
 
 
-        PushCommit gitPushCommit = new PushCommit(myLocalPath, myRemotePath, myProjectConfig);
+            String myLocalPath = (localPath == null) ? "/home/gerrit/git" : localPath;
+            String myRemotePath = (remotePath == null) ? "ssh://admin@localhost:29418/All-Projects" : remotePath;
+            String myProjectConfig = (projectConfig == null) ? "/home/gerrit/config" : projectConfig;
 
-        lock.lock();
-        while(! sshdAvailable(29418))
-            cond.await(5, TimeUnit.SECONDS);
+            logger.info("Using these settings from the environment: localPath='{}', remotePath='{}', projectConfig='{}', " +
+                    "adminPrivateKeyPath='{}'", myLocalPath, myRemotePath, myProjectConfig, adminPrivateKeyPath);
 
-        gitPushCommit.init();
-        lock.unlock();
+
+            PushCommit gitPushCommit = new PushCommit(myLocalPath, myRemotePath, myProjectConfig);
+
+            lock.lock();
+            while (!sshdAvailable(29418))
+                cond.await(5, TimeUnit.SECONDS);
+
+            gitPushCommit.init();
+            lock.unlock();
+        }
     }
 
     private static boolean sshdAvailable(int port) throws JSchException {
