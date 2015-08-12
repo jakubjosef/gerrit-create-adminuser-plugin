@@ -14,6 +14,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ChangeProjectConfig {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ChangeProjectConfig.class);
+    
+    // default env variables
+    public static final String DEFAULT_GERRIT_GIT_LOCALPATH = "/home/gerrit/git";
+    public static final String DEFAULT_GERRIT_GIT_REMOTEPATH = "ssh://admin@localhost:29418/All-Projects";
+    private static final String DEFAULT_GERRIT_GIT_PROJECT_CONFIG = "/home/gerrit/configs/project.config";
+
     private static String localPath, remotePath, projectConfig, adminPassword,
             adminPrivateKeyPath, adminPrivateKeyPassword;
     private static  int counter = 0;
@@ -26,9 +32,9 @@ public class ChangeProjectConfig {
             Lock lock = new ReentrantLock();
             Condition cond = lock.newCondition();
 
-            localPath = System.getenv("GERRIT_GIT_LOCALPATH");
-            remotePath = System.getenv("GERRIT_GIT_REMOTEPATH");
-            projectConfig = System.getenv("GERRIT_GIT_PROJECT_CONFIG");
+            localPath = lookupFromEnvironmentVariables("GERRIT_GIT_LOCALPATH", DEFAULT_GERRIT_GIT_LOCALPATH);
+            remotePath = lookupFromEnvironmentVariables("GERRIT_GIT_REMOTEPATH", DEFAULT_GERRIT_GIT_REMOTEPATH);
+            projectConfig = lookupFromEnvironmentVariables("GERRIT_GIT_PROJECT_CONFIG", DEFAULT_GERRIT_GIT_PROJECT_CONFIG);
             adminPrivateKeyPath = System.getenv("GERRIT_ADMIN_PRIVATE_KEY");
             adminPrivateKeyPassword = System.getenv("GERRIT_ADMIN_PRIVATE_KEY_PASSWORD");
 
@@ -50,6 +56,14 @@ public class ChangeProjectConfig {
             gitPushCommit.init();
             lock.unlock();
         }
+    }
+
+    private static String lookupFromEnvironmentVariables(String env, String defaultValue) {
+        String rc = System.getenv(env);
+        if (rc == null || rc.isEmpty()) {
+            return defaultValue;
+        }
+        return rc;
     }
 
     private static boolean haveAdmin(String adminFullname) {
