@@ -329,8 +329,16 @@ public class AddUser implements InitStep {
             throw new IOException(String.format(
                     "Cannot add public SSH key: %s is not a file", keyFile));
         }
-        String content = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
-        return new AccountSshKey(new AccountSshKey.Id(id, 0), content);
+        String content = null;
+        try {
+            content = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
+            return new AccountSshKey(new AccountSshKey.Id(id, 0), content);
+        } catch (Exception e) {
+            System.out.println("Cannot read the ssh key file: " + keyFile);
+            System.out.println("Will continue along, but will not function as expected... there will be no SSH key for: " + id);
+        }
+
+        return null;
     }
 
     private static Account.Id ADMIN_ACCOUNT_ID() {
