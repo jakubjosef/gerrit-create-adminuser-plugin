@@ -159,7 +159,7 @@ public class AddUser implements InitStep {
         return rc;
     }
 
-    // TODO Review  code to add first ADMIN USER
+    // TODO Review code to add first ADMIN USER
     private void add() throws OrmException, IOException {
         ui.header("Gerrit Administrator");
         logger.info("Create administrator user");

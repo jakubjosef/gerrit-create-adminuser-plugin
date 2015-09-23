@@ -10,7 +10,7 @@ export GERRIT_PUBLIC_KEYS_PATH='/Users/chmoulli/MyProjects/gerrit-plugins/create
 
 java -jar target/gerrit.war init --batch --no-auto-start -d target/gerrit-site
 
-cp ./target/add-user-plugin-2.11.jar ./target/gerrit-site/plugins/
+cp ./target/add-user-plugin-2.11.2.jar ./target/gerrit-site/plugins/
 cp ./config/gerrit.config ./target/gerrit-site/etc
 
 java -Xdebug -Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y -jar target/gerrit.war init --batch -d target/gerrit-site
