@@ -334,8 +334,8 @@ public class AddUser implements InitStep {
             content = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
             return new AccountSshKey(new AccountSshKey.Id(id, 0), content);
         } catch (Exception e) {
-            System.out.println("Cannot read the ssh key file: " + keyFile);
-            System.out.println("Will continue along, but will not function as expected... there will be no SSH key for: " + id);
+            logger.info("Cannot read the ssh key file: " + keyFile);
+            logger.info("Will continue along, but will not function as expected... there will be no SSH key for: " + id);
         }
 
         return null;
