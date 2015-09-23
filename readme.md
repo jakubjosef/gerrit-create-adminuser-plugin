@@ -1,12 +1,24 @@
-# Instructions to test the plugin
+# Gerrit Plugins 
 
-### Download gerrit-war
+This project contains 2 Gerrit plugins where add-user-plugin will be used to add new users when we start the gerrit servers and change-project-config
+will be used to change the permissions of the projects
+
+# Instructions
+
+The code has been tested and developed against gerrit 2.11.
+We will download and install it locally using this command executed within a terminal
 
 ```
 curl -L -o target/gerrit.war https://gerrit-releases.storage.googleapis.com/gerrit-2.11.war
 ```
 
-### Using the plugins
+or thescript available under the bin directory
+
+```
+./change-project-config/bin/curl_gerrit_war.sh
+```
+
+## To use the 2 two plugins
 
 ```
 ./target/gerrit-site/bin/gerrit.sh stop
@@ -23,7 +35,7 @@ java -jar target/gerrit.war init --batch -d target/gerrit-site
 ./target/gerrit-site/bin/gerrit.sh start
 ```
 
-### To debug
+## To debug a plugin
 
 ```
 ./target/gerrit-site/bin/gerrit.sh stop
