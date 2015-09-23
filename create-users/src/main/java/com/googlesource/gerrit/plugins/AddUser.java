@@ -312,6 +312,7 @@ public class AddUser implements InitStep {
     private AccountSshKey retrieveSshKey(String user, Account.Id id) throws IOException {
         String userPublicSshKeyFile = "";
         String sshKeyFileToSearch = sshPrefix + user + sshSuffix;
+        logger.info("SSH Key to search : " + sshKeyFileToSearch + ", for the user : " + user);
         
         Path userPublicSshKeyPath = Paths.get(sshPath, sshKeyFileToSearch);
         if (Files.exists(userPublicSshKeyPath)) {
@@ -320,7 +321,6 @@ public class AddUser implements InitStep {
         return createSshKey(id, userPublicSshKeyFile);
 
     }
-
 
     private AccountSshKey createSshKey(Account.Id id, String keyFile)
             throws IOException {
@@ -332,6 +332,7 @@ public class AddUser implements InitStep {
         String content = null;
         try {
             content = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
+            logger.info("Content of the SSH Key retrieved : " + content + ", for the user : " + id.toString());
             return new AccountSshKey(new AccountSshKey.Id(id, 0), content);
         } catch (Exception e) {
             logger.info("Cannot read the ssh key file: " + keyFile);

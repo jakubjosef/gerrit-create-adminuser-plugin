@@ -69,11 +69,7 @@ Change project config plugin:
 - `GERRIT_GIT_REMOTEPATH` - the location in a running gerrit instance where the config project resides
 - `GERRIT_GIT_PROJECT_CONFIG` - the config file to use (replace) when updating the gerrit config
 - `GERRIT_ADMIN_PRIVATE_KEY` - the location and name of the admin private key to use to connect to the gerrit config repo as admin user eg, `/path/to/file/id_rsa`
-- `GERRIT_ADMIN_PRIVATE_KEY_PASSWORD` - the password to use the private key, if applicable. if there is no password, just leave it blank
-
-        
-
-                
+- `GERRIT_ADMIN_PRIVATE_KEY_PASSWORD` - the password to use the private key, if applicable. if there is no password, just leave it blank             
                 
 ### Commands used to start/stop, check status
 
