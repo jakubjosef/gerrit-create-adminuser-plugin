@@ -11,7 +11,7 @@ export GERRIT_PUBLIC_KEYS_PATH='/Users/chmoulli/MyProjects/gerrit-plugins/create
 java -jar target/gerrit.war init --batch --no-auto-start -d target/gerrit-site
 
 cp ~/.m2/repository/junit/junit/4.12/junit-4.12.jar ./target/gerrit-site/lib/
-cp ~/.m2/repository/com/googlesource/gerrit/plugins/add-user-plugin/2.11.2/add-user-plugin-2.11.2.jar target/gerrit-site/plugins/
+cp ~/.m2/repository/com/googlesource/gerrit/plugins/add-user-plugin/2.11.3-SNAPSHOT/add-user-plugin-2.11.3-SNAPSHOT.jar target/gerrit-site/plugins/
 
 cp target/change-project-config-plugin-2.11.jar target/gerrit-site/plugins/
 cp config/gerrit.config target/gerrit-site/etc

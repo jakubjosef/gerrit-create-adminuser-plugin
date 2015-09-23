@@ -6,7 +6,7 @@
     <groupId>io.fabric8.docker.gerrit</groupId>
     <artifactId>change-project-config</artifactId>
     <packaging>jar</packaging>
-    <version>2.11.2</version>
+    <version>2.11.3-SNAPSHOT</version>
     <name>Fabric8 :: Gerrit :: Change Project Config (permissions, labels)</name>
 
     <build>
