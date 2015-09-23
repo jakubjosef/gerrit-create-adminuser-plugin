@@ -6,16 +6,67 @@ will be used to change the permissions of the projects
 # Instructions
 
 The code has been tested and developed against gerrit 2.11.
-We will download and install it locally using this command executed within a terminal
+
+## To generate new keys
+
+Run this script within the create-users directory. The users can be changed within the script.
+By default, we generate the keys for the following users : admin, jenkins & sonar
+
+```
+dabou:~/MyProjects/gerrit-plugins/create-users$
+./bin/generate_keys.sh
+```
+
+## Build project at the root 
+
+```
+mvn clean install 
+```
+
+## Download gerrit war
+
+We will download and install it locally using this command executed within a terminal under one of the 
+plugin directory
 
 ```
 curl -L -o target/gerrit.war https://gerrit-releases.storage.googleapis.com/gerrit-2.11.war
 ```
 
-or thescript available under the bin directory
+or the scipt available under the bin directory
 
 ```
-./change-project-config/bin/curl_gerrit_war.sh
+./bin/curl_gerrit_war.sh
+```
+
+## To generate a Gerrit Site
+
+```
+dabou:~/MyProjects/gerrit-plugins/create-users$
+./bin/generte_start.sh
+```
+
+## Test ssh connection with the keys generated and imported
+
+Move to the plugin folder `create-users` and execute this command
+
+```
+ssh -i ssh-keys/id_admin_rsa -p 29418 admin@localhost
+
+The authenticity of host '[localhost]:29418 ([::1]:29418)' can't be established.
+RSA key fingerprint is da:46:52:0c:69:68:76:f8:32:16:81:47:17:6d:70:69.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '[localhost]:29418' (RSA) to the list of known hosts.
+
+  ****    Welcome to Gerrit Code Review    ****
+
+  Hi Administrator, you have successfully connected over SSH.
+
+  Unfortunately, interactive shells are disabled.
+  To clone a hosted Git repository, use:
+
+  git clone ssh://admin@192.168.1.3:29418/REPOSITORY_NAME.git
+
+Connection to localhost closed.
 ```
 
 ## To use the 2 two plugins
@@ -83,7 +134,9 @@ Change project config plugin:
 - `GERRIT_ADMIN_PRIVATE_KEY` - the location and name of the admin private key to use to connect to the gerrit config repo as admin user eg, `/path/to/file/id_rsa`
 - `GERRIT_ADMIN_PRIVATE_KEY_PASSWORD` - the password to use the private key, if applicable. if there is no password, just leave it blank             
                 
-### Commands used to start/stop, check status
+## Commands used to start/stop, check status
+
+Run these commands within one of the two plugin after creating a project
 
 ```
 ./target/gerrit-site/bin/gerrit.sh start
@@ -92,7 +145,7 @@ Change project config plugin:
 ./target/gerrit-site/bin/gerrit.sh status
 ```
 
-- Consult database records
+## Consult database records
 
 ```
 ./target/gerrit-site/bin/gerrit.sh stop
@@ -108,39 +161,19 @@ java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM ACCOUNT
 java -jar target/gerrit.war gsql -d target/gerrit-site -c 'SELECT * FROM SCHEMA_VERSION'
 ```
 
-- Test ssh connection
+## Some commands
+
+* List members
 
 ```
-ssh -p 29418 admin@localhost
-
-The authenticity of host '[localhost]:29418 ([::1]:29418)' can't be established.
-RSA key fingerprint is da:46:52:0c:69:68:76:f8:32:16:81:47:17:6d:70:69.
-Are you sure you want to continue connecting (yes/no)? yes
-Warning: Permanently added '[localhost]:29418' (RSA) to the list of known hosts.
-
-  ****    Welcome to Gerrit Code Review    ****
-
-  Hi Administrator, you have successfully connected over SSH.
-
-  Unfortunately, interactive shells are disabled.
-  To clone a hosted Git repository, use:
-
-  git clone ssh://admin@192.168.1.3:29418/REPOSITORY_NAME.git
-
-Connection to localhost closed.
-```
-
-- Run some commands
-
-```
-List members
-
 ssh -p 29418 admin@localhost gerrit ls-members Administrators
 id      username        full name       email
 1000000 admin   Administrator   ch007m@gmail.com
+```
 
-Lis tof plugins
+* List of plugins
 
+```
 ssh -p 29418 admin@localhost gerrit plugin ls -a --format json
 {
   "create-admin-user": {

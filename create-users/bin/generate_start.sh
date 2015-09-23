@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 ./target/gerrit-site/bin/gerrit.sh stop
 rm -rf target/gerrit-site
 export GERRIT_ADMIN_USER='admin'
