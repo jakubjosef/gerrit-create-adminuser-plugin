@@ -201,6 +201,7 @@ public class AddUser implements InitStep {
     private void add(String user, String fullname, String email, String httpPassword, String groups) throws OrmException, IOException {
 
         logger.info("Create user : " + user);
+        System.out.println("Create user : " + user);
         Account.Id id = new Account.Id(db.nextAccountId());
 
         AccountSshKey sshKey = retrieveSshKey(user, id);
@@ -246,6 +247,8 @@ public class AddUser implements InitStep {
         Account.Id id = account.getId();
 
         if (id.equals(ADMIN_ACCOUNT_ID())) {
+            logger.info("Update user : " + user);
+            System.out.println("Update user : " + user);
             account.setUserName(user);
             account.setFullName(fullname);
             account.setPreferredEmail(email);
@@ -265,6 +268,8 @@ public class AddUser implements InitStep {
             }
 
         } else {
+            logger.info("Update user : " + user);
+            System.out.println("Update user : " + user);
             account.setUserName(user);
             account.setFullName(fullname);
             account.setPreferredEmail(email);
@@ -311,6 +316,7 @@ public class AddUser implements InitStep {
         String userPublicSshKeyFile = "";
         String sshKeyFileToSearch = sshPrefix + user + sshSuffix;
         logger.info("SSH Key to search : " + sshKeyFileToSearch + ", for the user : " + user);
+        System.out.println("SSH Key to search : " + sshKeyFileToSearch + ", for the user : " + user);
         
         Path userPublicSshKeyPath = Paths.get(sshPath, sshKeyFileToSearch);
         if (Files.exists(userPublicSshKeyPath)) {
@@ -331,10 +337,13 @@ public class AddUser implements InitStep {
         try {
             content = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
             logger.info("Content of the SSH Key retrieved : " + content + ", for the user : " + id.toString());
+            System.out.println("Content of the SSH Key retrieved : " + content + ", for the user : " + id.toString());
             return new AccountSshKey(new AccountSshKey.Id(id, 0), content);
         } catch (Exception e) {
             logger.info("Cannot read the ssh key file: " + keyFile);
             logger.info("Will continue along, but will not function as expected... there will be no SSH key for: " + id);
+            System.out.println("Cannot read the ssh key file: " + keyFile);
+            System.out.println("Will continue along, but will not function as expected... there will be no SSH key for: " + id);
         }
 
         return null;

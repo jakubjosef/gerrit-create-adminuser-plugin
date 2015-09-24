@@ -42,7 +42,7 @@ or the scipt available under the bin directory
 
 ```
 dabou:~/MyProjects/gerrit-plugins/create-users$
-./bin/generte_start.sh
+./bin/generate_start.sh
 ```
 
 ## Test ssh connection with the keys generated and imported
