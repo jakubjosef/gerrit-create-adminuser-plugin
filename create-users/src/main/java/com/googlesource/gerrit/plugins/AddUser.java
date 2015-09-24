@@ -262,9 +262,10 @@ public class AddUser implements InitStep {
             }
 
             AccountSshKey sshKey = retrieveSshKey(user, id);
+            System.out.println("SSH Public Key retrieved : " + sshKey.getSshPublicKey());
 
             if (sshKey != null) {
-                db.accountSshKeys().insert(Collections.singleton(sshKey));
+                db.accountSshKeys().update(Collections.singleton(sshKey));
             }
 
         } else {
@@ -283,6 +284,7 @@ public class AddUser implements InitStep {
             }
 
             AccountSshKey sshKey = retrieveSshKey(user, id);
+            System.out.println("SSH Public Key retrieved : " + sshKey.getSshPublicKey());
 
             if (sshKey != null) {
                 db.accountSshKeys().insert(Collections.singleton(sshKey));
