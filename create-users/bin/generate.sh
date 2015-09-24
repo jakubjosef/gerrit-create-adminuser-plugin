@@ -6,7 +6,7 @@ export GERRIT_ADMIN_FULLNAME='Administrator'
 export GERRIT_ADMIN_EMAIL='admin1@fabric8.io'
 export GERRIT_ADMIN_PWD='mysecret'
 export GERRIT_ACCOUNTS='jenkins,jenkins,jenkins@fabric8.io,secret,Non-Interactive Users:Administrators;sonar,sonar,sonar@fabric8.io,secret,Non-Interactive Users'
-export GERRIT_PUBLIC_KEYS_PATH='/Users/ceposta/fabric8/gerrit-create-adminuser-plugin/create-users/ssh-keys'
+export GERRIT_PUBLIC_KEYS_PATH='/Users/chmoulli/MyProjects/gerrit-plugins/create-users/ssh-keys'
 
 # delete these
 #export GERRIT_GIT_LOCALPATH='/Users/ceposta/fabric8/gerrit-create-adminuser-plugin/create-users/target/git'
