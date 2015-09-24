@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
+
 ./target/gerrit-site/bin/gerrit.sh stop
 rm -rf target/gerrit-site
+
 export GERRIT_ADMIN_USER='admin'
 export GERRIT_ADMIN_FULLNAME='Administrator'
 export GERRIT_ADMIN_EMAIL='admin1@fabric8.io'
