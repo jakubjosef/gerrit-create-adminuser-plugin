@@ -14,5 +14,4 @@ cp target/add-user-plugin-2.11.3-SNAPSHOT.jar target/gerrit-site/plugins/
 cp config/gerrit.config target/gerrit-site/etc
 
 java -jar target/gerrit.war init --batch -d target/gerrit-site
-
-java -Dlog4j.configuration=/Users/chmoulli/Temp/createuserplugin/config/log4j.properties -jar target/gerrit.war daemon -d target/gerrit-site
+java -Dlog4j.configuration=file:///Users/chmoulli/MyProjects/gerrit-plugins/create-users/config/log4j.properties -jar target/gerrit.war daemon -d target/gerrit-site
