@@ -265,7 +265,15 @@ public class AddUser implements InitStep {
             System.out.println("SSH Public Key retrieved : " + sshKey.getSshPublicKey());
 
             if (sshKey != null) {
-                db.accountSshKeys().update(Collections.singleton(sshKey));
+                ResultSet<AccountSshKey> resuts =
+                        db.accountSshKeys().byAccountLast(id);
+
+                if (resuts.toList().isEmpty()) {
+                    db.accountSshKeys().insert(Collections.singleton(sshKey));
+                } else {
+                    logger.info("Public SSH Key already exist in Gerrit : " + resuts.toList().get(0).getSshPublicKey() + ", for the user : " + id);
+                    System.out.println("Public SSH Key already exist in Gerrit : " + resuts.toList().get(0).getSshPublicKey() + ", for the user : " + id);
+                }
             }
 
         } else {
