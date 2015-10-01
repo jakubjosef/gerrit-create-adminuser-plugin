@@ -184,6 +184,15 @@ ssh -p 29418 admin@localhost gerrit plugin ls -a --format json
 }
 ```
 
+* Create a repo without commit
+
+```
+curl -d "create_empty_commit=false" -u admin:secret --verbose --digest -k -X POST http://gerrit.vagrant.f8/a/projects/dabou6
+
+http -a admin:secret --auth-type=digest -v --verify=no --timeout=2.5 POST http://gerrit.vagrant.f8/a/projects/dabou7 create_empty_commit:false
+
+```
+
 
 
 
