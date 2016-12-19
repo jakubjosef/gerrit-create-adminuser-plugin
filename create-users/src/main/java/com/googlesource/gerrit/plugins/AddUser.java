@@ -14,10 +14,13 @@ import com.google.gwtorm.server.OrmException;
 import com.google.gwtorm.server.ResultSet;
 import com.google.gwtorm.server.SchemaFactory;
 import com.google.inject.Inject;
+import com.google.gerrit.server.account.VersionedAuthorizedKeys;
+import com.google.gerrit.common.errors.InvalidSshKeyException;
 
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.eclipse.jgit.errors.ConfigInvalidException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -40,6 +43,7 @@ public class AddUser implements InitStep {
     private final AllProjectsConfig allProjectsConfig;
     private SchemaFactory<ReviewDb> dbFactory;
     private ReviewDb db;
+    private final VersionedAuthorizedKeys.Accessor authorizedKeys;
 
     private HashMap<Integer, String> groupsMap;
 
@@ -54,11 +58,12 @@ public class AddUser implements InitStep {
 
     @Inject
     AddUser(@PluginName String pluginName, ConsoleUI ui,
-            AllProjectsConfig allProjectsConfig, InitFlags flags) {
+            AllProjectsConfig allProjectsConfig, InitFlags flags, VersionedAuthorizedKeys.Accessor authorizedKeys) {
         this.pluginName = pluginName;
         this.allProjectsConfig = allProjectsConfig;
         this.flags = flags;
         this.ui = ui;
+        this.authorizedKeys = authorizedKeys;
         defineGroups();
     }
 
@@ -158,7 +163,7 @@ public class AddUser implements InitStep {
     }
 
     // TODO Review code to add first ADMIN USER
-    private void add() throws OrmException, IOException {
+    private void add() throws OrmException, IOException, ConfigInvalidException, InvalidSshKeyException {
         ui.header("Gerrit Administrator");
         logger.info("Create administrator user");
         Account.Id id = new Account.Id(db.nextAccountId());
@@ -194,11 +199,11 @@ public class AddUser implements InitStep {
         db.accountGroupMembers().insert(Collections.singleton(m));
 
         if (sshKey != null) {
-            db.accountSshKeys().insert(Collections.singleton(sshKey));
+            authorizedKeys.addKey(id,sshKey.getSshPublicKey());
         }
     }
 
-    private void add(String user, String fullname, String email, String httpPassword, String groups) throws OrmException, IOException {
+    private void add(String user, String fullname, String email, String httpPassword, String groups) throws OrmException, IOException, ConfigInvalidException, InvalidSshKeyException {
 
         logger.info("Create user : " + user);
         System.out.println("Create user : " + user);
@@ -238,11 +243,11 @@ public class AddUser implements InitStep {
         }
 
         if (sshKey != null) {
-            db.accountSshKeys().insert(Collections.singleton(sshKey));
+            authorizedKeys.addKey(id,sshKey.getSshPublicKey());
         }
     }
 
-    private void update(Account account, String user, String fullname, String email, String pwd, String groups) throws OrmException, IOException {
+    private void update(Account account, String user, String fullname, String email, String pwd, String groups) throws OrmException, IOException, ConfigInvalidException, InvalidSshKeyException {
 
         Account.Id id = account.getId();
 
@@ -265,14 +270,13 @@ public class AddUser implements InitStep {
             System.out.println("SSH Public Key retrieved : " + sshKey.getSshPublicKey());
 
             if (sshKey != null) {
-                ResultSet<AccountSshKey> resuts =
-                        db.accountSshKeys().byAccountLast(id);
+                List<AccountSshKey> resuts = authorizedKeys.getKeys(id);
 
-                if (resuts.toList().isEmpty()) {
-                    db.accountSshKeys().insert(Collections.singleton(sshKey));
+                if (resuts.isEmpty()) {
+                    authorizedKeys.addKey(id,sshKey.getSshPublicKey());
                 } else {
-                    logger.info("Public SSH Key already exist in Gerrit : " + resuts.toList().get(0).getSshPublicKey() + ", for the user : " + id);
-                    System.out.println("Public SSH Key already exist in Gerrit : " + resuts.toList().get(0).getSshPublicKey() + ", for the user : " + id);
+                    logger.info("Public SSH Key already exist in Gerrit : " + resuts.get(0).getSshPublicKey() + ", for the user : " + id);
+                    System.out.println("Public SSH Key already exist in Gerrit : " + resuts.get(0).getSshPublicKey() + ", for the user : " + id);
                 }
             }
 
@@ -295,7 +299,7 @@ public class AddUser implements InitStep {
             System.out.println("SSH Public Key retrieved : " + sshKey.getSshPublicKey());
 
             if (sshKey != null) {
-                db.accountSshKeys().insert(Collections.singleton(sshKey));
+                authorizedKeys.addKey(id,sshKey.getSshPublicKey());
             }
         }
 
